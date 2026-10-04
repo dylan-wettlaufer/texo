@@ -1,38 +1,43 @@
-# texo
+# Texo
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+An architecture workspace prototype built with Next.js App Router, TypeScript, and Tailwind CSS. All project and diagram content comes from hard-coded fixtures; there are no backend integrations or persisted edits.
 
-## Getting Started
-
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. The home route redirects to `/projects`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Explore
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `/projects`: sample project directory.
+- `/projects/atlas`: Atlas Commerce and its three architecture diagrams.
+- `/projects/atlas/diagrams/system`: interactive system overview.
+- `/projects/atlas/diagrams/dependencies`: service dependencies.
+- `/projects/atlas/diagrams/checkout`: checkout request flow.
+- `/projects/beacon`: an empty project example.
 
-## Learn More
+Select a node to inspect its context and incoming/outgoing relationships. Inspector connections select the related node. Use the canvas controls to zoom or fit the graph, scroll to explore at higher zoom, and press Escape or click the background to clear selection. Changing diagrams resets selection and viewport state.
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app/(app)`: shared application layout and project routes.
+- `components/shell`, `components/projects`, `components/workspace`: navigation, project views, and interactive canvas components.
+- `lib/architecture`: domain types, fixtures, lookup helpers, and graph geometry.
+- `docs/PRD.md`: product vision. This prototype deliberately excludes authentication, persistence, integrations, and graph editing.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+No graph or UI packages have been added. The canvas uses HTML nodes and SVG connections.
 
-## Deploy on Vercel
+## Verification
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+node --experimental-strip-types --test lib/architecture/architecture.test.mjs
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The fixture tests use Node's built-in test runner with native TypeScript stripping (Node 22.6+). Next.js fetches the starter Geist fonts from Google during a production build, so the build needs network access.
