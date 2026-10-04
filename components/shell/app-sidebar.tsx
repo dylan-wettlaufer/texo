@@ -1,5 +1,7 @@
 "use client";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -12,7 +14,7 @@ export function AppSidebar({ projects }: { projects: Project[] }) {
     <aside className="app-sidebar">
       <div className="sidebar-brand">
         <Link href="/projects" className="brand" aria-label="Texo projects"><span className="brand-mark">t</span>texo<span className="brand-dot">.</span></Link>
-        <button className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={open} aria-controls="app-navigation" onClick={() => setOpen(!open)}>☰</button>
+        <Button variant="ghost" className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={open} aria-controls="app-navigation" onClick={() => setOpen(!open)}>☰</Button>
       </div>
       <nav id="app-navigation" className={`sidebar-navigation ${open ? "is-open" : ""}`} aria-label="Main navigation">
         <Link href="/projects" className={`nav-link ${pathname === "/projects" ? "active" : ""}`} aria-current={pathname === "/projects" ? "page" : undefined} onClick={() => setOpen(false)}><span aria-hidden="true">▦</span> All projects</Link>
@@ -23,7 +25,7 @@ export function AppSidebar({ projects }: { projects: Project[] }) {
         })}
         <div className="sidebar-note"><span className="status-dot" /> Prototype workspace<p>Explore a sample architecture.<br />Everything here is demo data.</p></div>
       </nav>
-      <div className="sidebar-footer"><span className="avatar">T</span><div>Texo workspace<small>Architecture, in context</small></div></div>
+      <div className="sidebar-footer"><Avatar className="avatar"><AvatarFallback>T</AvatarFallback></Avatar><div>Texo workspace<small>Architecture, in context</small></div></div>
     </aside>
   );
 }

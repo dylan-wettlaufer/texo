@@ -1,48 +1,57 @@
-import { useEffect, useId, useLayoutEffect, useRef } from "react";
+import { useCallback, useMemo } from "react";
+import { Background, ConnectionMode, MarkerType, ReactFlow, useNodesState, type Edge, type NodeChange } from "@xyflow/react";
 import type { Diagram } from "@/lib/architecture/types";
-import { diagramSize, edgeGeometry } from "@/lib/architecture/geometry";
-import { ArchitectureNode } from "./architecture-node";
+import { NODE_HEIGHT, NODE_WIDTH } from "@/lib/architecture/geometry";
+import { ArchitectureNode, type FlowArchitectureNode } from "./architecture-node";
+import { CanvasControls } from "./canvas-controls";
 
-export function DiagramCanvas({ diagram, selectedId, scale, fitRevision, onSelect, onResize }: { diagram: Diagram; selectedId: string | null; scale: number; fitRevision: number; onSelect: (id: string | null) => void; onResize: (size: { width: number; height: number }) => void }) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const markerId = useId().replaceAll(":", "");
-  const size = diagramSize(diagram.nodes);
+const nodeTypes = { architecture: ArchitectureNode };
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ left: 0, top: 0 });
-  }, [fitRevision]);
-
-  useLayoutEffect(() => {
-    const element = viewportRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => onResize({ width: entry.contentRect.width, height: entry.contentRect.height }));
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [onResize]);
+export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diagram; selectedId: string | null; onSelect: (id: string | null) => void }) {
+  const [nodes, , onNodesChange] = useNodesState<FlowArchitectureNode>(diagram.nodes.map((node) => ({
+    id: node.id, type: "architecture", position: { ...node.position }, data: { node },
+    width: NODE_WIDTH, height: NODE_HEIGHT,
+    ariaLabel: `${node.name}. Select to inspect; use arrow keys to move.`,
+  })));
+  const handleNodesChange = useCallback((changes: NodeChange<FlowArchitectureNode>[]) => {
+    const selection = changes.find((change) => change.type === "select" && change.selected);
+    if (selection?.type === "select") onSelect(selection.id);
+    // Selection lives in the workspace so inspector links and Escape stay in sync.
+    onNodesChange(changes.filter((change) => change.type !== "select"));
+  }, [onNodesChange, onSelect]);
+  const displayedNodes = useMemo(() => nodes.map((node) => ({ ...node, selected: node.id === selectedId })), [nodes, selectedId]);
+  const edges = useMemo<Edge[]>(() => diagram.edges.map((edge) => {
+    const source = nodes.find((node) => node.id === edge.source)!;
+    const target = nodes.find((node) => node.id === edge.target)!;
+    const dx = target.position.x - source.position.x;
+    const dy = target.position.y - source.position.y;
+    const horizontal = Math.abs(dx) >= Math.abs(dy);
+    const active = selectedId === edge.source || selectedId === edge.target;
+    const color = active ? "#6687e8" : "#bec9dc";
+    return {
+      ...edge, type: "smoothstep",
+      sourceHandle: horizontal ? (dx >= 0 ? "right" : "left") : (dy >= 0 ? "bottom" : "top"),
+      targetHandle: horizontal ? (dx >= 0 ? "left" : "right") : (dy >= 0 ? "top" : "bottom"),
+      markerEnd: { type: MarkerType.ArrowClosed, color },
+      style: { stroke: color, strokeWidth: active ? 2 : 1.5 },
+      labelStyle: { fill: active ? "#4168c7" : "#798ba6", fontSize: 10 },
+      labelBgStyle: { fill: "#f9fbff", stroke: "#e4eaf5" }, labelBgPadding: [8, 5], labelBgBorderRadius: 5,
+    };
+  }), [diagram.edges, nodes, selectedId]);
 
   return (
-    <div ref={viewportRef} className="canvas-viewport" aria-label={`${diagram.name} diagram canvas`} onKeyDown={(event) => { if (event.key === "Escape") onSelect(null); }}>
-      <div ref={scrollRef} className="canvas-scroll" tabIndex={0} aria-label="Scrollable diagram. Use arrow keys to scroll." onClick={(event) => { if (!(event.target as Element).closest("button")) onSelect(null); }}>
-        <div className="canvas-scaled-area" style={{ width: size.width * scale + 48, height: size.height * scale + 80 }}>
-          <div className="diagram-surface" style={{ width: size.width, height: size.height, transform: `scale(${scale})` }}>
-            <svg className="diagram-edges" width={size.width} height={size.height} role="img" aria-label={diagram.edges.map((edge) => `${diagram.nodes.find((node) => node.id === edge.source)?.name} to ${diagram.nodes.find((node) => node.id === edge.target)?.name}: ${edge.label}`).join(". ")}>
-              <defs><marker id={markerId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" /></marker></defs>
-              {diagram.edges.map((edge) => {
-                const source = diagram.nodes.find((node) => node.id === edge.source);
-                const target = diagram.nodes.find((node) => node.id === edge.target);
-                if (!source || !target) return null;
-                const { path, label } = edgeGeometry(source, target);
-                const active = selectedId === edge.source || selectedId === edge.target;
-                const width = edge.label.length * 6.5 + 20;
-                return <g key={edge.id} className={active ? "edge active" : "edge"}><path d={path} fill="none" markerEnd={`url(#${markerId})`} /><rect x={label.x - width / 2} y={label.y - 11} width={width} height={22} rx={5} /><text x={label.x} y={label.y + 4} textAnchor="middle">{edge.label}</text></g>;
-              })}
-            </svg>
-            {diagram.nodes.map((node) => <ArchitectureNode key={node.id} node={node} selected={selectedId === node.id} onSelect={onSelect} />)}
-          </div>
-        </div>
-      </div>
-      <span className="canvas-hint">Select a node to explore · Esc to clear</span>
+    <div className="canvas-viewport" aria-label={`${diagram.name} diagram canvas`}>
+      <ReactFlow<FlowArchitectureNode>
+        nodes={displayedNodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={handleNodesChange}
+        onNodeClick={(_, node) => onSelect(node.id)} onNodeDragStart={(_, node) => onSelect(node.id)}
+        onPaneClick={() => onSelect(null)} connectionMode={ConnectionMode.Loose}
+        nodesConnectable={false} edgesFocusable={false} deleteKeyCode={null} multiSelectionKeyCode={null}
+        minZoom={0.1} maxZoom={1.8} fitView fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+      >
+        <Background color="#d8dfed" gap={20} />
+        <CanvasControls />
+      </ReactFlow>
+      <span className="canvas-hint">Drag nodes to arrange · Drag canvas to pan · Scroll to zoom · Esc to clear</span>
     </div>
   );
 }
