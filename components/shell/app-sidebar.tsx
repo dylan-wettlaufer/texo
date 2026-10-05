@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "./theme-toggle";
 import type { Project } from "@/lib/architecture/types";
 
 export function AppSidebar({ projects }: { projects: Project[] }) {
@@ -14,7 +15,7 @@ export function AppSidebar({ projects }: { projects: Project[] }) {
     <aside className="app-sidebar">
       <div className="sidebar-brand">
         <Link href="/projects" className="brand" aria-label="Texo projects"><span className="brand-mark">t</span>texo<span className="brand-dot">.</span></Link>
-        <Button variant="ghost" className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={open} aria-controls="app-navigation" onClick={() => setOpen(!open)}>☰</Button>
+        <div className="sidebar-actions"><ThemeToggle /><Button variant="ghost" className="mobile-menu icon-button" aria-label="Toggle navigation" aria-expanded={open} aria-controls="app-navigation" onClick={() => setOpen(!open)}>☰</Button></div>
       </div>
       <nav id="app-navigation" className={`sidebar-navigation ${open ? "is-open" : ""}`} aria-label="Main navigation">
         <Link href="/projects" className={`nav-link ${pathname === "/projects" ? "active" : ""}`} aria-current={pathname === "/projects" ? "page" : undefined} onClick={() => setOpen(false)}><span aria-hidden="true">▦</span> All projects</Link>

@@ -27,15 +27,15 @@ export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diag
     const dy = target.position.y - source.position.y;
     const horizontal = Math.abs(dx) >= Math.abs(dy);
     const active = selectedId === edge.source || selectedId === edge.target;
-    const color = active ? "#6687e8" : "#bec9dc";
+    const color = active ? "var(--primary)" : "var(--input)";
     return {
       ...edge, type: "smoothstep",
       sourceHandle: horizontal ? (dx >= 0 ? "right" : "left") : (dy >= 0 ? "bottom" : "top"),
       targetHandle: horizontal ? (dx >= 0 ? "left" : "right") : (dy >= 0 ? "top" : "bottom"),
       markerEnd: { type: MarkerType.ArrowClosed, color },
       style: { stroke: color, strokeWidth: active ? 2 : 1.5 },
-      labelStyle: { fill: active ? "#4168c7" : "#798ba6", fontSize: 10 },
-      labelBgStyle: { fill: "#f9fbff", stroke: "#e4eaf5" }, labelBgPadding: [8, 5], labelBgBorderRadius: 5,
+      labelStyle: { fill: active ? "var(--foreground)" : "var(--muted-foreground)", fontSize: 10 },
+      labelBgStyle: { fill: "var(--card)", stroke: "var(--border)" }, labelBgPadding: [8, 5], labelBgBorderRadius: 2,
     };
   }), [diagram.edges, nodes, selectedId]);
 
@@ -46,12 +46,11 @@ export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diag
         onNodeClick={(_, node) => onSelect(node.id)} onNodeDragStart={(_, node) => onSelect(node.id)}
         onPaneClick={() => onSelect(null)} connectionMode={ConnectionMode.Loose}
         nodesConnectable={false} edgesFocusable={false} deleteKeyCode={null} multiSelectionKeyCode={null}
-        minZoom={0.1} maxZoom={1.8} fitView fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+        minZoom={0.1} maxZoom={1.8} fitView fitViewOptions={{ padding: 0.1, maxZoom: 1.4 }}
       >
-        <Background color="#d8dfed" gap={20} />
+        <Background color="var(--border)" gap={20} />
         <CanvasControls />
       </ReactFlow>
-      <span className="canvas-hint">Drag nodes to arrange · Drag canvas to pan · Scroll to zoom · Esc to clear</span>
     </div>
   );
 }
