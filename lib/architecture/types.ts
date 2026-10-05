@@ -6,6 +6,13 @@ export interface ArchitectureNode {
   technology: string;
   kind: NodeKind;
   position: { x: number; y: number };
+  dependencyIds?: string[];
+  interfaces?: string[];
+  technologies?: string[];
+  architectureDecisions?: string[];
+  codeReferences?: string[];
+  notes?: string;
+  metadata?: Record<string, string>;
 }
 export interface ArchitectureEdge {
   id: string;

@@ -7,18 +7,16 @@ import { CanvasControls } from "./canvas-controls";
 
 const nodeTypes = { architecture: ArchitectureNode };
 
-export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diagram; selectedId: string | null; onSelect: (id: string | null) => void }) {
+export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diagram; selectedId: string | null; onSelect: (id: string, trigger?: HTMLElement) => void }) {
   const [nodes, , onNodesChange] = useNodesState<FlowArchitectureNode>(diagram.nodes.map((node) => ({
     id: node.id, type: "architecture", position: { ...node.position }, data: { node },
     width: NODE_WIDTH, height: NODE_HEIGHT,
-    ariaLabel: `${node.name}. Select to inspect; use arrow keys to move.`,
+    ariaLabel: `${node.name}. Press Enter or Space to inspect; use arrow keys to move when selected.`,
   })));
   const handleNodesChange = useCallback((changes: NodeChange<FlowArchitectureNode>[]) => {
-    const selection = changes.find((change) => change.type === "select" && change.selected);
-    if (selection?.type === "select") onSelect(selection.id);
-    // Selection lives in the workspace so inspector links and Escape stay in sync.
+    // Only explicit activation opens the inspector; flow selection also occurs on drag.
     onNodesChange(changes.filter((change) => change.type !== "select"));
-  }, [onNodesChange, onSelect]);
+  }, [onNodesChange]);
   const displayedNodes = useMemo(() => nodes.map((node) => ({ ...node, selected: node.id === selectedId })), [nodes, selectedId]);
   const edges = useMemo<Edge[]>(() => diagram.edges.map((edge) => {
     const source = nodes.find((node) => node.id === edge.source)!;
@@ -40,11 +38,18 @@ export function DiagramCanvas({ diagram, selectedId, onSelect }: { diagram: Diag
   }), [diagram.edges, nodes, selectedId]);
 
   return (
-    <div className="canvas-viewport" aria-label={`${diagram.name} diagram canvas`}>
+    <div className="canvas-viewport" aria-label={`${diagram.name} diagram canvas`} onKeyDownCapture={(event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const target = event.target instanceof Element ? event.target.closest<HTMLElement>(".react-flow__node") : null;
+      if (!target?.dataset.id) return;
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(target.dataset.id, target);
+    }}>
       <ReactFlow<FlowArchitectureNode>
         nodes={displayedNodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={handleNodesChange}
-        onNodeClick={(_, node) => onSelect(node.id)} onNodeDragStart={(_, node) => onSelect(node.id)}
-        onPaneClick={() => onSelect(null)} connectionMode={ConnectionMode.Loose}
+        onNodeClick={(event, node) => onSelect(node.id, event.currentTarget as HTMLElement)}
+        selectNodesOnDrag={false} connectionMode={ConnectionMode.Loose}
         nodesConnectable={false} edgesFocusable={false} deleteKeyCode={null} multiSelectionKeyCode={null}
         minZoom={0.1} maxZoom={1.8} fitView fitViewOptions={{ padding: 0.1, maxZoom: 1.4 }}
       >

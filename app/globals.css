@@ -300,20 +300,10 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .canvas-controls { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: var(--card); box-shadow: var(--shadow-sm); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
 .icon-button { border: 0; background: transparent; color: var(--muted-foreground); width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius); font-size: 19px; }
 .icon-button:hover { background: var(--card); }
-.inspector-content { padding: 0; }
 .kind-badge { background: color-mix(in oklch, var(--chart-1) 12%, var(--card)); border-color: var(--border); color: var(--chart-1); font-size: 9px; }
 .kind-badge.node-storage { background: color-mix(in oklch, var(--chart-5) 12%, var(--card)); color: var(--chart-5); border-color: var(--border); }
 .kind-badge.node-service { background: color-mix(in oklch, var(--chart-2) 12%, var(--card)); color: var(--chart-2); border-color: var(--border); }
 .kind-badge.node-external { background: color-mix(in oklch, var(--chart-1) 12%, var(--card)); color: var(--chart-1); border-color: var(--border); }
-.inspector-content h3 { font-size: 16px; font-weight: 550; margin: 13px 0 11px; }
-.inspector-content > p { font-size: 11px; line-height: 1.9; color: var(--muted-foreground); }
-.inspector-section { padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border); }
-.inspector-section h4 { font-size: 8px; letter-spacing: 1px; font-weight: 600; color: var(--muted-foreground); margin-bottom: 13px; display: flex; justify-content: space-between; }
-.technology-value { display: block; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; color: var(--muted-foreground); font-family: var(--font-mono); font-size: 9px; }
-.relationship { display: block; width: 100%; text-align: left; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; margin-top: 7px; }
-.relationship:hover { background: var(--accent); border-color: var(--ring); }
-.relationship strong { font-weight: 500; font-size: 10px; display: flex; justify-content: space-between; color: var(--muted-foreground); }
-.relationship small { display: block; margin-top: 5px; color: var(--muted-foreground); font-size: 9px; }
 
 @media (max-width: 1250px) {
   .app-sidebar { width: 200px; padding-left: 12px; padding-right: 12px;  background: var(--sidebar);  color: var(--sidebar-foreground); }
@@ -323,7 +313,6 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
   .diagram-card-meta { display: none; }
 }
 @media (max-width: 1050px) {
-  .inspector-content { max-width: 600px; }
   .welcome-art { display: none; }
 }
 @media (max-width: 700px) {
@@ -364,11 +353,10 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .canvas-controls { z-index: 5; }
 .architecture-node:active { cursor: grabbing; }
 .architecture-node .react-flow__handle { background: var(--input); border: 2px solid var(--card); width: 8px; height: 8px; }
-.relationship[data-slot="button"] { height: auto; white-space: normal; display: block; }
 
 /* Readable prose uses Open Sans; interface headings use Ubuntu. */
 .page-heading p, .welcome-panel p, .project-card p, .project-summary p,
-.diagram-card-content p, .empty-state p, .inspector-content > p,
+.diagram-card-content p, .empty-state p, .inspector-content p,
 .sidebar-note p {
   font-family: var(--font-serif);
 }
@@ -397,14 +385,40 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .diagram-switcher { left: 12px; max-width: calc(100% - 72px); }
 .diagram-name { display: block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
 .workspace-theme { right: 12px; }
+.architecture-workspace { --inspector-width: 380px; }
+.has-inspector .canvas-viewport { right: var(--inspector-width); }
+.has-inspector .workspace-theme { right: calc(var(--inspector-width) + 12px); }
 .node-inspector {
-  position: absolute; top: 60px; right: 12px; z-index: 10; width: 280px;
-  max-width: calc(100% - 24px); max-height: calc(100dvh - 116px); overflow: auto;
-  border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; background: var(--card);
+  position: absolute; inset: 0 0 0 auto; z-index: 20;
+  width: var(--inspector-width); max-width: 100%;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-left: 1px solid var(--border); background: var(--card); color: var(--foreground);
 }
-.inspector-close { position: absolute; top: 8px; right: 8px; }
-.node-inspector .kind-badge { margin-right: 28px; }
+.inspector-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 10px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.inspector-header h2 { font-size: 14px; font-weight: 500; color: var(--muted-foreground); }
+.inspector-header h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.inspector-close { flex-shrink: 0; }
+.inspector-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.inspector-content .kind-badge { font-size: 11px; }
+.inspector-content .inspector-node-name { font-size: 20px; font-weight: 600; line-height: 1.3; margin: 14px 0 24px; }
+.inspector-section { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border); }
+.inspector-section h4 { font-size: 12px; font-weight: 600; letter-spacing: .3px; margin: 0 0 12px; }
+.inspector-section p { white-space: pre-wrap; }
+.inspector-empty { color: var(--muted-foreground); }
+.inspector-list { display: grid; gap: 10px; list-style: disc; padding-left: 20px; }
+.inspector-code { list-style: none; padding-left: 0; }
+.inspector-code li { background: var(--background); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+.inspector-code code { font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; }
+.node-inspector .relationship { display: block; width: 100%; height: auto; white-space: normal; text-align: left; border: 1px solid var(--border); padding: 12px; margin-top: 8px; }
+.relationship strong { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; }
+.relationship small { display: block; font-size: 12px; color: var(--muted-foreground); margin-top: 4px; }
+.relationship:hover { background: var(--accent); border-color: var(--ring); }
+.inspector-metadata { margin-top: 16px; display: grid; gap: 12px; }
+.inspector-metadata div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 12px; }
+.inspector-metadata dt { color: var(--muted-foreground); }
 @media (max-width: 700px) {
   .diagram-name { max-width: 180px; }
-  .node-inspector { max-height: 45dvh; }
+  .has-inspector .canvas-viewport { right: 0; }
+  .has-inspector .workspace-theme { right: 12px; }
+  .inspector-content { padding: 16px; }
 }
