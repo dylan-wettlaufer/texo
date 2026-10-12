@@ -11,6 +11,7 @@ export interface ArchitectureNode {
   technologies?: string[];
   architectureDecisions?: string[];
   codeReferences?: string[];
+  sourceFiles?: { path: string; description: string }[];
   notes?: string;
   metadata?: Record<string, string>;
 }

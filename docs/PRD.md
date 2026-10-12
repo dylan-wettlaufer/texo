@@ -1,410 +1,173 @@
+# Texo — A Visual Understanding Layer for AI-Built Software
 
-**Tagline:** An architecture context layer for developers and coding agents.
+**Tagline:** Build with AI. Understand what it builds.
+
+## Overview
+
+Texo is an agent-native visual code exploration platform that helps developers understand how their applications work as they build with AI coding agents. The diagrams are built and maintained alongside the project: each feature adds both implementation and an explanation of how it fits into the system.
+
+Developers explore a living map of services, modules, components, and functions, with plain-English explanations and references to the code behind them. Agents contribute this understanding through MCP while they implement changes.
+
+The goal is that developers remain connected to the software their agents are creating.
 
 ## The Problem
 
-Coding agents are becoming increasingly capable of modifying large codebases, but they often lack a persistent understanding of how a software system is designed.
+AI tools can produce features faster than developers can understand their implementation. File trees reveal where code lives but make relationships and execution paths difficult to follow. Separate diagrams and Markdown explanations become outdated, and developers repeatedly ask agents to explain the same code.
 
-Agents can inspect files and infer relationships from code, but they repeatedly spend context discovering the same things:
+Texo should help developers understand responsibilities, dependencies, data flow, and design decisions at the level of detail they need, without requiring them to read every file.
 
-- What services exist?
-    
-- What is each component responsible for?
-    
-- How do services communicate?
-    
-- What databases, queues, caches, and external systems are involved?
-    
-- What architectural decisions has the team made?
-    
-- Which parts of the codebase implement a particular component?
-    
+## Development Workflow
 
-Traditional architecture diagrams don't solve this well. They're usually static documents created in tools like Miro, draw.io, or Confluence. They quickly become outdated, and coding agents generally cannot use them as structured context.
+1. Create a Texo project and connect an MCP-compatible coding agent to the repository.
+2. Describe a feature to the agent.
+3. As the agent implements the feature, it creates or updates components, connections, source references, and explanations in the project model.
+4. Texo reflects those changes on the architecture canvas.
+5. The developer clicks a component, reads its explanation, follows its connections, and explores the related implementation.
+6. Later changes update the model alongside the code so the diagrams continue to describe the project as it evolves.
 
-## The Idea
+Existing projects can start with an agent inspecting the repository and creating an initial map. Ongoing development should maintain that map as part of feature work.
 
-**Texo is a shared architecture model that both developers and coding agents can understand and modify.**
+## Core Features
 
-Developers get a collaborative visual canvas for understanding and designing their software architecture.
+### 1. Living Architecture Canvas
 
-Coding agents interact with the same architecture through **MCP**.
+An interactive map of services, databases, APIs, modules, and components. Labeled connections explain dependencies and communication paths. Developers can pan, zoom, and navigate views. Planned agent integration updates the map as code is built and highlights components affected by recent changes.
 
-The key idea is:
+### 2. Hierarchical Code Exploration
 
-**Human ↔ Texo ↔ Coding Agent ↔ Code**
+- **System architecture:** major services, databases, external integrations, and their communication.
+- **Component architecture:** internal modules, classes, and responsibilities within a service.
+- **Functions and source code:** individual functions, callers, dependencies, and implementation.
 
-Texo becomes the persistent architectural context between the developer and their coding agents.
+Progressive exploration should reveal detail on demand instead of showing the entire codebase as hundreds of nodes at once.
 
-It is **not primarily an AI diagram generator** and does not need its own LLM integration.
+### 3. Interactive Component Inspector
 
-Instead, users bring the coding agent they already use—such as Codex, Claude Code, Cursor, or another MCP-compatible agent. Their agent understands their codebase and uses Texo's MCP tools to create, query, and update the architecture model.
+Clicking a component opens a right sidebar while keeping the canvas available. The primary layout is:
 
-## Example Workflow
+- Component name, type, and technology.
+- **Overview:** a plain-English explanation of purpose and responsibilities.
+- **Connections:** incoming and outgoing communication with names and explanatory labels. Selecting a connected component updates the inspector.
+- **Related source files:** paths and short descriptions of the implementation they contain.
 
-A developer creates a new Texo project and connects the Texo MCP server to their coding agent.
+Additional context includes interfaces, dependencies, consumers, design decisions, notes, and metadata. Dependency ownership is separate from communication direction; a worker depends on a queue even when jobs flow from the queue to the worker.
 
-They can then tell their agent:
+For **Commerce API**, the overview explains request handling, payment authorization, order storage, and publishing background jobs. Connections include the Web application, Primary database, Payment provider, and Order queue. Example files are `src/api/orders.ts` (order endpoints), `src/services/payment.ts` (payment coordination), and `src/queues/orders.ts` (queue publishing).
 
-> Analyze this codebase and create its architecture in Texo.
+Planned deeper inspection includes important functions, syntax-highlighted source, and links to relevant locations in the developer's IDE. Real code access must be implemented before example rows become navigation controls.
 
-The coding agent inspects the local repository using its existing capabilities and calls Texo's MCP tools to construct the architecture.
+### 4. Agent-Native MCP Integration
 
-For example:
+MCP is the planned interface for Codex, Claude Code, Cursor, and other compatible agents to read and maintain the project model. During implementation, agents create components, update descriptions, modify relationships, attach source references, and record architectural decisions and feature explanations.
 
-```
-Developer
-    │
-    ▼
-Coding Agent
-    │
-    │ MCP
-    ▼
-Texo Architecture Model
-    │
-    ▼
-Visual Architecture Canvas
-```
+Conceptual tools include `get_architecture`, `get_component`, `search_architecture`, component and relationship creation/update/deletion, `attach_code_reference`, `add_decision`, and `get_pending_changes`. These are proposed capabilities, not implemented tools in this prototype.
 
-No GitHub integration is required.
+Agents supply their understanding while writing code. Planned code analysis verifies references and flags outdated information; it complements agent explanations. Texo works with the developer's existing coding agent.
 
-Texo does not clone the repository, index the entire codebase, or send the user's code through its own LLM.
+### 5. Visual Code Explanations
 
-The coding agent remains responsible for understanding the code. **Texo provides the persistent structured architecture representation.**
+A developer can request a walkthrough such as “Show me how an incoming API request reaches the database.” The planned experience highlights the relevant path, explains each step, and shows corresponding source code and data movement.
 
-## The Architecture Model
+The current checkout diagram illustrates a request flow; it does not yet provide generated or interactive step-by-step explanations.
 
-The important technical distinction is that **the visual diagram is not the source of truth**.
+### 6. Feature Walkthroughs and Replay — Future
 
-Underneath the canvas, Texo stores a structured architecture graph.
+After a feature is implemented, developers could review the components added or modified and how the feature integrates into the application. Walkthrough generation, change history, and replay remain future work. The supplied outline ends during this section; detailed replay behavior still needs definition.
 
-For example:
+## Storage and Source of Truth
 
-```
-Checkout Service
-    │
-    ├── depends on → Payments Service
-    │
-    └── uses → Redis
+**The repository is the source of truth. The Texo database is a cache and index.**
 
-Payments Service
-    │
-    ├── depends on → PostgreSQL
-    └── integrates with → Stripe
-```
+The architecture graph is stored as a structured file (for example `.texo/architecture.json`, or a `.texo/` directory of files for larger systems) committed to the project's repository. The Texo web app is a viewer and editor over that file, not the owner of the data.
 
-Each architecture node can contain structured information such as:
+### Why the repository
 
-- Name
-    
-- Component type
-    
-- Description/responsibility
-    
-- Dependencies
-    
-- Consumers
-    
-- Interfaces
-    
-- Technologies
-    
-- Architectural decisions
-    
-- Relevant files or directories
-    
-- Notes and metadata
-    
+- **Agents already have the repo.** Coding agents work inside the checkout. If the architecture is a file there, they can read it with no network call, no API key, and no dependency on Texo's servers being up.
 
-The canvas is simply the **human interface to this graph**.
+- **It stays in sync by construction.** A code change and its architecture update can land in the same commit or PR. Each branch carries its own architecture state, so there is no separate mapping between "which diagram matches which commit."
 
-MCP is the **agent interface to this graph**.
+- **History and review come for free.** Diffs, blame, rollback, and PR review work on the architecture file the same way they work on code.
+
+- **Trust.** Teams that are wary of sending architecture details to a third-party service can still adopt the format without handing over their data.
+
+- **It reinforces the product philosophy.** The architecture model lives next to the code it describes, so it is part of the development workflow rather than documentation maintained separately.
+
+### What the database is for
+
+The database holds anything that is not tied to a specific commit, and a fast copy of what is:
+
+- Users, teams, permissions, and billing
+
+- Cached, parsed copies of the architecture for fast canvas rendering and search
+
+- Comments and discussion on components
+
+- Cross-project views, such as all services across an organization
+
+- Pending canvas edits that have not yet been written back to the repo
+
+### File format principles
+
+- **Stable IDs.** Every component and relationship has a stable ID so edits can be diffed and matched across versions, and so renames don't break relationships.
+
+- **Deterministic serialization.** Keys and arrays are written in a consistent order so diffs are minimal and merge conflicts are rare.
+
+- **Schema versioning.** The file declares a schema version so older files can be migrated.
+
+- **Human-readable.** The file should be reviewable in a PR without Texo.
+
+- **Splittable.** Large systems can be divided into multiple files (for example per service) to reduce merge conflicts.
+
+### Sync model
 
 ```
-                     ┌─────────────────────┐
-                     │        TEXO         │
-                     │                     │
-                     │ Architecture Graph  │
-                     └─────────┬───────────┘
-                               │
-                  ┌────────────┴────────────┐
-                  │                         │
-                  ▼                         ▼
-          Visual Canvas                  MCP Server
-          Human Interface              Agent Interface
-                  │                         │
-                  ▼                         ▼
-             Developers                Coding Agents
+Agent edits  → MCP server → .texo/ file in repo → synced to Texo cache → Canvas updates
+Canvas edits → Texo cache → pending changes → written to .texo/ file in repo (via MCP server or CLI)
 ```
 
-## Node Inspector
+- The MCP server runs where the agent runs, reads and writes the repo file directly, and syncs changes to Texo so the canvas stays current.
 
-Clicking a component on the canvas should reveal considerably more than its name.
+- Edits made on the canvas are stored as pending changes. They are written into the repo file the next time the local MCP server or CLI syncs, and the agent can ask what has changed since it last looked.
 
-For example, clicking **Payments Service** might show:
+- Later, an optional GitHub integration can write canvas edits back as commits or pull requests without needing a local agent session.
 
-```
-Payments Service
+- When the repo file and the canvas disagree, the repo file wins, and the user is shown the conflict to resolve rather than being silently overwritten.
 
-Responsibility
-Processes customer payments and tracks payment state.
+## Model and Implementation Principles
 
-Provides
-POST /payments
-GET /payments/:id
+The canvas presents a structured model rather than owning a separate drawing. Stable component IDs link views, explanations, relationships, and source references. Future hierarchical views should share identities and attach file/function locations without duplicating component context.
 
-Depends On
-Stripe
-PostgreSQL
+Code remains the implementation truth. Explanations must distinguish verified references from agent-authored descriptions and proposed architecture. Diagrams should be reviewed with the code changes they describe.
 
-Used By
-Checkout Service
+The repository-storage and cache/sync design above is retained from the existing architecture direction. Storage, sync, conflict handling, MCP, and code verification are planned and are not present in the current app.
 
-Code
-/services/payments/
-/services/payments/payment.service.ts
-/services/payments/payment.controller.ts
+## Current Prototype
 
-Architecture Decisions
-Stripe is considered the source of truth for payment state.
-```
+Implemented:
 
-This makes Texo useful both as a high-level diagram and as a way to navigate and understand a system.
+- Sample project directory, project pages, and an empty-project state.
+- Three Atlas Commerce views: system overview, service dependencies, and checkout request flow.
+- Interactive React Flow canvas with pan, zoom, selection, and diagram navigation.
+- Right component inspector with overview, labeled connections, illustrative source references, and expandable technical details.
+- Keyboard activation, Escape dismissal, focus restoration, independent inspector scrolling, and a narrow-screen overlay.
 
-## MCP
+All content uses local fixtures. There is no authentication, persistence, repository connection, MCP server, graph editing, source-code viewer, hierarchical drill-down, code analysis, automatic update, change highlighting, or generated walkthrough.
 
-MCP is central to the product rather than an optional integration.
+## Delivery Outline
 
-Texo could expose tools conceptually similar to:
+1. **Exploration foundation:** refine the canvas and inspector so developers can understand components and follow their relationships. This is the current prototype phase.
+2. **Model and agent updates:** define the versioned repository format, connect a local MCP server, and reflect agent changes on the canvas during project development.
+3. **Implementation navigation:** attach validated files and functions, add component-level drill-down, source inspection, and IDE links.
+4. **Explanations and verification:** provide visual execution walkthroughs, change highlighting, and stale-reference checks.
+5. **Later exploration:** feature walkthroughs and replay, collaboration, optional GitHub integration, and cross-project views.
 
-```
-get_architecture()
-get_component()
-search_architecture()
+## Open Questions
 
-create_component()
-update_component()
-delete_component()
-
-create_relationship()
-update_relationship()
-delete_relationship()
-
-attach_code_reference()
-
-get_decisions()
-add_decision()
-```
-
-This allows an agent to both **read and modify** architectural context.
-
-Before implementing something, an agent could query Texo:
-
-```
-get_component("payments-service")
-```
-
-and learn its responsibilities, dependencies, interfaces, decisions, and relevant code locations without having to rediscover all of that context.
-
-After changing the system, the agent can update Texo.
-
-For example, if Redis is added:
-
-```
-create_component("redis", type="cache")
-
-create_relationship(
-    from="recommendation-service",
-    to="redis",
-    type="depends_on"
-)
-```
-
-The architecture canvas updates accordingly.
-
-## The Two-Way Relationship
-
-This is the most important part of Texo.
-
-Most architecture tools are:
-
-```
-Human → Diagram
-```
-
-Texo is:
-
-```
-Human
-   ↕
-Architecture Model
-   ↕
-Coding Agent
-   ↕
-Codebase
-```
-
-Humans can use Texo to communicate architectural intent to agents.
-
-Agents can use Texo to communicate architectural changes back to humans.
-
-For example, a developer could visually specify:
-
-```
-Recommendation Service
-        │
-        ▼
-      Redis
-```
-
-Then tell their coding agent:
-
-> Implement the Redis cache shown in our Texo architecture.
-
-The agent queries Texo through MCP, understands the intended relationship, and implements it.
-
-Likewise, if the developer tells their coding agent directly:
-
-> Add Redis caching to the recommendation service and update Texo when you're done.
-
-the agent can modify the code and then update the architecture model through MCP.
-
-This keeps architecture connected to the actual development workflow rather than being documentation that developers have to remember to maintain separately.
-
-## What Texo Is NOT
-
-Texo should initially avoid becoming:
-
-- A full IDE
-    
-- A coding agent
-    
-- A GitHub code indexer
-    
-- A source-code search engine
-    
-- An AI wrapper
-    
-- A repository hosting platform
-    
-- A replacement for coding agents
-    
-- A low-level AST/code intelligence platform
-    
-
-Texo should work **with** existing coding agents rather than competing with them.
-
-The agent already has access to the repository and already has an LLM.
-
-There is little reason for Texo to duplicate that infrastructure.
-
-## Product Philosophy
-
-The fundamental idea is:
-
-> **Agents understand code. Texo remembers architecture.**
-
-The coding agent handles reasoning about the repository.
-
-Texo provides persistent, structured knowledge about how the system fits together.
-
-That creates three useful layers:
-
-```
-CODE
-Implementation truth
-      ↑
-      │
-AGENT
-Understands and modifies code
-      ↕
-      │ MCP
-      ↕
-TEXO
-Persistent architecture context
-      ↕
-      │
-DEVELOPER
-Designs and understands the system
-```
-
-## Initial MVP
-
-The first version should stay focused.
-
-A user should be able to:
-
-1. Create a Texo project.
-    
-2. Build architecture diagrams manually on a visual canvas.
-    
-3. Create components such as services, databases, caches, queues, APIs, and external systems.
-    
-4. Connect those components with typed relationships.
-    
-5. Click a component to inspect its responsibilities, dependencies, interfaces, decisions, and code references.
-    
-6. Connect Texo's MCP server to their coding agent.
-    
-7. Allow the agent to read the architecture.
-    
-8. Allow the agent to create and modify architecture components and relationships.
-    
-9. See agent-created changes immediately reflected on the canvas.
-    
-
-The killer first-run experience should be:
-
-```
-Create Texo Project
-        ↓
-Connect MCP
-        ↓
-Open coding agent
-        ↓
-"Analyze this repo and build its
- architecture in Texo."
-        ↓
-Agent examines local code
-        ↓
-Agent calls Texo MCP tools
-        ↓
-Architecture appears in Texo
-```
-
-Texo itself never needed access to the repository or an LLM.
-
-## Longer-Term Vision
-
-Texo could eventually become the **architecture context layer for agentic software development**.
-
-As teams run more coding agents, those agents need more than raw source code. They need persistent context about:
-
-- System boundaries
-    
-- Responsibilities
-    
-- Dependencies
-    
-- Interfaces
-    
-- Architectural constraints
-    
-- Technical decisions
-    
-- Ownership
-    
-- Intended system design
-    
-
-Instead of every agent repeatedly reconstructing this information from thousands of files, agents can query Texo.
-
-That makes the architecture model useful not only as documentation, but as **machine-readable context for software agents**.
-
-The long-term product isn't simply:
-
-> Better architecture diagrams.
-
-It's:
-
-> **A shared model of a software system that humans and agents can work from together.**
+- What is the first repository language supported for validating files and function references?
+- How are source code and IDE locations accessed safely from the viewer?
+- How quickly should agent changes appear while implementation is in progress?
+- What distinguishes implemented architecture from a proposed change?
+- Should larger models use one file or files split by service?
+- How should the canvas expose branch conflicts and pending edits?
+- Which fields can teams exclude from a cloud cache?
+- What is the first useful scope for feature walkthroughs and replay?

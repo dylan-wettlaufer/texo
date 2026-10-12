@@ -1,6 +1,10 @@
 # Texo
 
-An architecture workspace prototype built with Next.js App Router, TypeScript, and Tailwind CSS. All project and diagram content comes from hard-coded fixtures; there are no backend integrations or persisted edits.
+**Build with AI. Understand what it builds.**
+
+Texo is a visual understanding layer for AI-built software. Diagrams are built and maintained alongside a project so developers can understand the code their agents are creating: what each component does, how components communicate, and which source files implement them.
+
+The current app is an interactive exploration prototype built with Next.js App Router, TypeScript, and Tailwind CSS. All project and diagram content comes from hard-coded fixtures; there are no backend integrations or persisted edits. Agent updates through MCP, hierarchical exploration, source-code inspection, and visual walkthroughs are planned; see [the product outline](docs/PRD.md).
 
 ## Run locally
 
@@ -20,16 +24,16 @@ Open http://localhost:3000. The home route redirects to `/projects`.
 - `/projects/atlas/diagrams/checkout`: checkout request flow.
 - `/projects/beacon`: an empty project example.
 
-Click a node, or focus it and press Enter or Space, to open its details in the right sidebar. On desktop, the canvas makes room for the sidebar; on narrow screens, the sidebar overlays the canvas. The sidebar stays open while you pan, zoom, or click empty canvas space. Its body scrolls independently. Close it with × or Escape; focus returns to the node that opened it. Clicking another node updates the same sidebar. Changing diagrams resets selection and viewport state.
+Click a node, or focus it and press Enter or Space, to open its details in the right sidebar. On desktop, the canvas makes room for the sidebar; on narrow screens, the sidebar overlays the canvas. The sidebar stays open while you pan, zoom, or click empty canvas space. Its body scrolls independently. Close it with the panel-close button or Escape; focus returns to the node that opened it. Clicking another node updates the same sidebar. Changing diagrams resets selection and viewport state.
 
-Details include responsibilities, explicit dependencies and their consumers, interfaces, technologies, architectural decisions, code references, notes, and metadata. Relationship buttons inspect related nodes, including those outside the current diagram. Dependency relationships are independent of request-flow arrows. Architectural details and code references are illustrative demo fixtures; paths do not refer to this repository. Details are read-only.
+The sidebar follows the component inspector layout: component name and technology, Overview, Connections with direction and diagram-specific labels, and Related source files. Commerce API includes example order endpoints, payment coordination, and queue-publishing files. More component details expands explicit dependencies and their consumers, interfaces, technologies, architectural decisions, notes, and metadata. Relationship buttons inspect related nodes, including those outside the current diagram. Dependency relationships are independent of request-flow arrows. Architectural details and code references are illustrative demo fixtures; paths do not refer to this repository. Details are read-only. Example source-file rows are informational; opening actual source code or an IDE is planned.
 
 ## Structure
 
 - `app/(app)`: shared application layout and project routes.
 - `components/shell`, `components/projects`, `components/workspace`: navigation, project views, and interactive canvas components.
 - `lib/architecture`: domain types, fixtures, lookup helpers, and graph geometry.
-- `docs/PRD.md`: product vision. This prototype deliberately excludes authentication, persistence, integrations, and graph editing.
+- `docs/PRD.md`: product outline, development workflow, planned capabilities, and current scope. This prototype deliberately excludes authentication, persistence, integrations, and graph editing.
 
 The canvas uses React Flow with the existing shadcn/ui components. No additional dependencies are needed for the node details sidebar.
 

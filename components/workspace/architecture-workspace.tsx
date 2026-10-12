@@ -27,7 +27,7 @@ export function ArchitectureWorkspace({ project, diagram, diagrams }: { project:
       <DiagramCanvas diagram={diagram} selectedId={selectedId} onSelect={selectNode} />
       <DiagramNavigator project={project} diagrams={diagrams} currentId={diagram.id} />
       <div className="workspace-theme"><ThemeToggle /></div>
-      <NodeInspector node={catalogue.find((node) => node.id === selectedId)} catalogue={catalogue} onSelect={selectNode} onClear={closeInspector} />
+      <NodeInspector node={catalogue.find((node) => node.id === selectedId)} catalogue={catalogue} edges={diagram.edges} onSelect={selectNode} onClear={closeInspector} />
     </section>
   );
 }

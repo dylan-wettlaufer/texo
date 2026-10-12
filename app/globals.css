@@ -385,7 +385,7 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .diagram-switcher { left: 12px; max-width: calc(100% - 72px); }
 .diagram-name { display: block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
 .workspace-theme { right: 12px; }
-.architecture-workspace { --inspector-width: 380px; }
+.architecture-workspace { --inspector-width: 420px; }
 .has-inspector .canvas-viewport { right: var(--inspector-width); }
 .has-inspector .workspace-theme { right: calc(var(--inspector-width) + 12px); }
 .node-inspector {
@@ -394,15 +394,17 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
   display: flex; flex-direction: column; overflow: hidden;
   border-left: 1px solid var(--border); background: var(--card); color: var(--foreground);
 }
-.inspector-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 10px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.inspector-header h2 { font-size: 14px; font-weight: 500; color: var(--muted-foreground); }
+.inspector-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 24px 20px 8px; flex-shrink: 0; }
+.inspector-header h2 { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 500; }
+.inspector-header h2 svg { width: 22px; height: 22px; flex-shrink: 0; color: var(--muted-foreground); }
+.inspector-subtitle { grid-column: 1 / -1; color: var(--muted-foreground); font-size: 13px; }
 .inspector-header h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
 .inspector-close { flex-shrink: 0; }
 .inspector-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
 .inspector-content .kind-badge { font-size: 11px; }
 .inspector-content .inspector-node-name { font-size: 20px; font-weight: 600; line-height: 1.3; margin: 14px 0 24px; }
 .inspector-section { padding-top: 20px; margin-top: 20px; border-top: 1px solid var(--border); }
-.inspector-section h4 { font-size: 12px; font-weight: 600; letter-spacing: .3px; margin: 0 0 12px; }
+.inspector-section h4 { font-size: 16px; font-weight: 500; margin: 0 0 12px; }
 .inspector-section p { white-space: pre-wrap; }
 .inspector-empty { color: var(--muted-foreground); }
 .inspector-list { display: grid; gap: 10px; list-style: disc; padding-left: 20px; }
@@ -422,3 +424,18 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
   .has-inspector .workspace-theme { right: 12px; }
   .inspector-content { padding: 16px; }
 }
+
+.inspector-content > .inspector-section:first-child { border-top: 0; margin-top: 0; padding-top: 8px; }
+.inspector-section { position: relative; }
+.inspector-example { color: var(--muted-foreground); font-size: 11px; margin-bottom: 12px; }
+.node-inspector .inspector-connection { display: flex; justify-content: flex-start; width: 100%; height: auto; padding: 10px 0; gap: 12px; text-align: left; white-space: normal; }
+.inspector-connection > svg { flex-shrink: 0; color: var(--muted-foreground); }
+.inspector-connection strong { display: block; font-size: 14px; font-weight: 500; }
+.inspector-connection small, .inspector-source-files small { display: block; color: var(--muted-foreground); font-size: 13px; margin-top: 4px; }
+.inspector-source-files { display: grid; gap: 24px; list-style: none; padding: 0; }
+.inspector-source-files li { display: flex; align-items: center; gap: 12px; }
+.inspector-source-files svg { width: 20px; height: 20px; flex-shrink: 0; color: var(--muted-foreground); }
+.inspector-source-files code { font-family: var(--font-sans); font-size: 14px; }
+.inspector-additional { border-top: 1px solid var(--border); margin-top: 24px; padding-top: 20px; }
+.inspector-additional summary { cursor: pointer; color: var(--muted-foreground); font-size: 13px; }
+.inspector-additional summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }

@@ -17,11 +17,16 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Storefront team", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "api", name: "Commerce API", description: "Validates requests and coordinates the catalog, checkout, and order lifecycle.", technology: "Node.js · REST", kind: "service", position: { x: 370, y: 220 },
+    id: "api", name: "Commerce API", description: "Handles incoming commerce requests, coordinates payment authorization, stores order data, and publishes jobs for asynchronous processing.", technology: "Node.js · REST", kind: "service", position: { x: 370, y: 220 },
     dependencyIds: ["db", "queue", "payments"], technologies: ["Node.js", "TypeScript", "REST"],
     interfaces: ["GET /products — List the product catalog", "POST /orders — Validate checkout and create an order", "GET /orders/:id — Read order and payment state"],
     architectureDecisions: ["Persist an accepted order before publishing its fulfillment job.", "Use an idempotency key for checkout retries to avoid duplicate payment authorizations."],
-    codeReferences: ["/services/commerce/", "/services/commerce/order.controller.ts", "/services/commerce/checkout.service.ts"],
+    codeReferences: ["src/api/orders.ts", "src/services/payment.ts", "src/queues/orders.ts"],
+    sourceFiles: [
+      { path: "src/api/orders.ts", description: "Order endpoints" },
+      { path: "src/services/payment.ts", description: "Payment coordination" },
+      { path: "src/queues/orders.ts", description: "Queue publishing" },
+    ],
     notes: "The API coordinates checkout. The payment provider remains authoritative for authorization and capture state.",
     metadata: { Owner: "Commerce team", Protocol: "HTTPS / JSON", Status: "Demo", "Code references": "Illustrative" },
   },
