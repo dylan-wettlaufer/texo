@@ -28,7 +28,7 @@ export function DiagramCanvas({ diagram, selectedId, onSelect, exploring, intera
     const dy = target.position.y - source.position.y;
     const horizontal = Math.abs(dx) >= Math.abs(dy);
     const active = interactions ? matchesInteraction(edge, interactions) : selectedId === edge.source || selectedId === edge.target;
-    const color = active ? "var(--primary)" : "var(--input)";
+    const color = active ? "var(--primary)" : "var(--muted-foreground)";
     return {
       ...edge, className: active && interactions ? "function-connection" : undefined, type: "default", pathOptions: { curvature: 0.35 },
       label: diagram.type === "Request flow" || active ? edge.label : undefined,
@@ -57,7 +57,7 @@ export function DiagramCanvas({ diagram, selectedId, onSelect, exploring, intera
         nodesConnectable={false} edgesFocusable={false} deleteKeyCode={null} multiSelectionKeyCode={null}
         minZoom={0.1} maxZoom={1.8} fitView fitViewOptions={{ padding: 0.18, maxZoom: 1 }}
       >
-        <Background color="var(--border)" gap={20} />
+        <Background gap={20} size={1.8} />
         <GraphViewportManager exploring={exploring} />
         <CanvasControls />
       </ReactFlow>

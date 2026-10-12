@@ -1,23 +1,17 @@
 import { themeInitializationScript } from "@/lib/theme";
 import type { Metadata } from "next";
-import { Ubuntu, Open_Sans, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "@xyflow/react/dist/style.css";
 import "./globals.css";
 
-const fontSans = Ubuntu({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-ubuntu",
+  variable: "--font-plus-jakarta-sans",
 });
 
-const fontSerif = Open_Sans({
+const fontMono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-open-sans",
-});
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
+  variable: "--font-jetbrains-mono",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} h-full`} suppressHydrationWarning>
+    <html lang="en" className={`${fontSans.variable} ${fontMono.variable} h-full`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} /></head>
       <body className="min-h-full antialiased">
         {children}

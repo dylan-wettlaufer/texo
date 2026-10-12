@@ -57,4 +57,4 @@ npm run lint
 npm run build
 ```
 
-The fixture tests use Node's built-in test runner with native TypeScript stripping (Node 22.6+). Next.js fetches Ubuntu, Open Sans, and Geist Mono from Google during a production build, so the build needs network access. In environments that block Turbopack worker port binding, use `npm run build -- --webpack` to validate with the supported alternate bundler.
+The fixture tests use Node's built-in test runner with native TypeScript stripping (Node 22.6+). Next.js fetches Plus Jakarta Sans and JetBrains Mono from Google during a production build, so the build needs network access. In environments that block Turbopack worker port binding, use `npm run build -- --webpack` to validate with the supported alternate bundler.
