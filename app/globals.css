@@ -436,11 +436,21 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 
 /* Read-only source exploration shares the workspace with the architecture map. */
 .architecture-workspace.is-exploring { grid-template-columns: minmax(0, var(--code-share)) 8px minmax(0, var(--graph-share)); }
-.code-explorer { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 55fr) minmax(0, 45fr); background: var(--card); overflow: hidden; }
+.code-explorer { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--card); overflow: hidden; }
+.explorer-header { flex-shrink: 0; }
+.explorer-section { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.explorer-explanation-section { flex: 45 1 0; }
+.explorer-source-section { flex: 55 1 0; border-top: 1px solid var(--border); }
+.explorer-section[data-state="closed"] { flex: 0 0 auto; }
+.explorer-section-trigger { flex-shrink: 0; width: 100%; justify-content: space-between; padding: 10px 16px; border-radius: 0; font-size: 12px; }
+.explorer-section-trigger svg { transition: transform .15s; }
+.explorer-section-trigger[data-state="closed"] svg { transform: rotate(-90deg); }
+.explorer-section > [data-slot="collapsible-content"] { flex: 1; }
+.explorer-section > [data-slot="collapsible-content"][data-state="closed"] { display: none; }
 .explorer-header { padding: 12px 16px; border-bottom: 1px solid var(--border); min-width: 0; }
-.explorer-toolbar { display: flex; align-items: center; gap: 6px; }
-.explorer-toolbar > .exploration-eyebrow { flex: 1; margin: 0; }
-.explorer-header h2 { font-family: var(--font-mono); font-size: 13px; font-weight: 500; margin: 12px 0; overflow-wrap: anywhere; }
+.explorer-toolbar { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.explorer-toolbar > button { flex-shrink: 0; }
+.explorer-header h2 { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 13px; font-weight: 500; margin: 0; overflow-wrap: anywhere; }
 .explorer-header h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .explorer-pickers { display: flex; gap: 12px; }
 .explorer-pickers label { flex: 1; min-width: 0; font-size: 11px; color: var(--muted-foreground); }
@@ -464,7 +474,7 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .dark .syntax-string { color: #a4d8a0; }
 .dark .syntax-number { color: #f3bb81; }
 .dark .syntax-comment { color: #99a4b2; }
-.explorer-context { min-height: 0; overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); }
+.explorer-context { min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .explorer-context .node-inspector { border-left: 0; height: 100%; }
 .exploration-explanation { padding: 20px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
 .exploration-explanation h2 { font-size: 20px; font-weight: 500; line-height: 1.3; margin-bottom: 16px; }
@@ -497,7 +507,7 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
   .exploration-divider { border-inline: 0; border-block: 1px solid var(--border); cursor: row-resize; }
   .exploration-divider > span { width: 28px; height: 2px; }
   .explorer-header { padding: 8px 12px; }
-  .explorer-header h2 { margin: 6px 0; font-size: 11px; }
+  .explorer-header h2 { font-size: 11px; }
   .exploration-explanation { padding: 12px; }
 }
 

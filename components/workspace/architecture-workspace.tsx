@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Diagram, Project } from "@/lib/architecture/types";
 import { projectNodeCatalogue } from "@/lib/architecture/node-details";
 import type { ExplorationHistory, ExplorationModel, ExplorationSelection, SourceReference } from "@/lib/exploration/types";
-import { functionSelection, moveHistory, pushSelection, resolveSource, selectionContext } from "@/lib/exploration/navigation";
+import { functionSelection, pushSelection, resolveSource, selectionContext } from "@/lib/exploration/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { DiagramNavigator } from "./diagram-navigator";
@@ -78,9 +78,8 @@ export function ArchitectureWorkspace({ project, diagram, diagrams, exploration 
       else if (selectedId) { event.stopPropagation(); closeInspector(); }
     }}>
       {history && selection && <CodeExplorer
-        model={exploration} selection={selection} history={history}
+        model={exploration} selection={selection}
         onNavigate={navigate} onFunction={selectFunction} onAnnotation={selectAnnotation}
-        onHistory={(delta) => { setHistory(moveHistory(history, delta)); setComponentContext(false); }}
         onClose={closeExploration}
         contextKey={componentContext ? `component:${selectedId}` : `code:${selection.path}:${selection.functionId}:${selection.annotationId}`}
         context={explanation}
