@@ -23,9 +23,9 @@ const nodes: ArchitectureNode[] = [
     architectureDecisions: ["Persist an accepted order before publishing its fulfillment job.", "Use an idempotency key for checkout retries to avoid duplicate payment authorizations."],
     codeReferences: ["src/api/orders.ts", "src/services/payment.ts", "src/queues/orders.ts"],
     sourceFiles: [
-      { path: "src/api/orders.ts", description: "Order endpoints" },
-      { path: "src/services/payment.ts", description: "Payment coordination" },
-      { path: "src/queues/orders.ts", description: "Queue publishing" },
+      { path: "src/api/orders.ts", description: "Order endpoints", fileId: "orders", defaultFunctionId: "create-order" },
+      { path: "src/services/payment.ts", description: "Payment coordination", fileId: "payment", defaultFunctionId: "coordinate-payment" },
+      { path: "src/queues/orders.ts", description: "Queue publishing", fileId: "queue-source", defaultFunctionId: "publish-order" },
     ],
     notes: "The API coordinates checkout. The payment provider remains authoritative for authorization and capture state.",
     metadata: { Owner: "Commerce team", Protocol: "HTTPS / JSON", Status: "Demo", "Code references": "Illustrative" },
@@ -63,6 +63,11 @@ const nodes: ArchitectureNode[] = [
     interfaces: ["POST /payments — Authorize a customer payment", "GET /payments/:id — Retrieve payment state", "Payment webhooks — Notify the Commerce API of state changes"],
     architectureDecisions: ["The payment provider is the source of truth for payment state.", "Verify webhook signatures before accepting payment updates."],
     codeReferences: ["/services/commerce/integrations/payments/", "/services/commerce/integrations/payments/payment.client.ts", "/services/commerce/integrations/payments/payment-webhook.controller.ts"],
+    sourceFiles: [
+      { path: "/services/commerce/integrations/payments/", description: "Payment integration files", directory: true },
+      { path: "/services/commerce/integrations/payments/payment.client.ts", description: "Payment authorization", fileId: "payment-client", defaultFunctionId: "authorize-payment" },
+      { path: "/services/commerce/integrations/payments/payment-webhook.controller.ts", description: "Webhook reconciliation", fileId: "payment-webhook", defaultFunctionId: "payment-webhook-handler" },
+    ],
     notes: "These paths reference the demo application's integration adapter, not the external provider's implementation.",
     metadata: { Owner: "Commerce team", Boundary: "External service", Status: "Demo", "Code references": "Illustrative" },
   },
@@ -76,7 +81,7 @@ export const diagrams: Diagram[] = [
   {
     id: "system", projectId: "atlas", name: "System overview", type: "System architecture",
     description: "A map of the storefront, core services, and the infrastructure that connects them.",
-    nodes,
+    nodes: positionedNodes({ web: { x: 320, y: 40 }, api: { x: 320, y: 210 }, db: { x: 40, y: 400 }, queue: { x: 320, y: 400 }, payments: { x: 600, y: 400 }, worker: { x: 320, y: 590 } }),
     edges: [
       { id: "web-api", source: "web", target: "api", label: "HTTPS requests" },
       { id: "api-db", source: "api", target: "db", label: "Read / write" },
@@ -89,7 +94,7 @@ export const diagrams: Diagram[] = [
   {
     id: "dependencies", projectId: "atlas", name: "Service dependencies", type: "Service dependencies",
     description: "The resources each service relies on to keep commerce running.",
-    nodes: positionedNodes({ api: { x: 60, y: 100 }, worker: { x: 60, y: 390 }, db: { x: 450, y: 60 }, queue: { x: 450, y: 390 }, payments: { x: 840, y: 220 } }),
+    nodes: positionedNodes({ api: { x: 320, y: 40 }, worker: { x: 320, y: 440 }, db: { x: 40, y: 240 }, queue: { x: 320, y: 240 }, payments: { x: 600, y: 240 } }),
     edges: [
       { id: "api-db", source: "api", target: "db", label: "Catalog & orders" },
       { id: "api-queue", source: "api", target: "queue", label: "Enqueue" },
@@ -101,7 +106,7 @@ export const diagrams: Diagram[] = [
   {
     id: "checkout", projectId: "atlas", name: "Checkout request", type: "Request flow",
     description: "Follow an order from the storefront through payment and asynchronous fulfillment.",
-    nodes: positionedNodes({ web: { x: 40, y: 80 }, api: { x: 370, y: 80 }, payments: { x: 700, y: 80 }, db: { x: 370, y: 390 }, queue: { x: 700, y: 390 }, worker: { x: 1030, y: 390 } }),
+    nodes: positionedNodes({ web: { x: 40, y: 40 }, api: { x: 370, y: 40 }, payments: { x: 700, y: 40 }, db: { x: 40, y: 310 }, queue: { x: 370, y: 310 }, worker: { x: 700, y: 310 } }),
     edges: [
       { id: "submit", source: "web", target: "api", label: "1 · Submit order" },
       { id: "pay", source: "api", target: "payments", label: "2 · Authorize" },

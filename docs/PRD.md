@@ -43,7 +43,7 @@ Progressive exploration should reveal detail on demand instead of showing the en
 
 ### 3. Interactive Component Inspector
 
-Clicking a component opens a right sidebar while keeping the canvas available. The primary layout is:
+Clicking a component opens a right sidebar that resizes the graph pane while preserving its center and zoom. Compact rounded cards and curved arrows keep the graph readable. On narrow screens, details occupy a separate pane below the graph. The primary layout is:
 
 - Component name, type, and technology.
 - **Overview:** a plain-English explanation of purpose and responsibilities.
@@ -54,7 +54,15 @@ Additional context includes interfaces, dependencies, consumers, design decision
 
 For **Commerce API**, the overview explains request handling, payment authorization, order storage, and publishing background jobs. Connections include the Web application, Primary database, Payment provider, and Order queue. Example files are `src/api/orders.ts` (order endpoints), `src/services/payment.ts` (payment coordination), and `src/queues/orders.ts` (queue publishing).
 
-Planned deeper inspection includes important functions, syntax-highlighted source, and links to relevant locations in the developer's IDE. Real code access must be implemented before example rows become navigation controls.
+The prototype now includes a read-only source-exploration demo. Commerce API and Payment Provider source entries open authored TypeScript examples. A directory opens a file chooser, and missing sample source remains visibly unavailable.
+
+Code and explanations occupy the left pane, and the synchronized graph occupies the right. A pointer- and keyboard-accessible divider resizes them; narrow screens stack the panes. Opening a file selects its component-associated function. Function overviews expose purpose, step-by-step behavior, inputs, outputs, side effects, linked callers/callees, and related architecture connections.
+
+Pre-annotated ranges can be selected through code markers or an annotation list. Selection highlights their lines and explains what the code does and why; Return to function overview clears the range. Exploration Back/Forward restores file, function, and annotation selection. Clicking a graph node shows its details without closing the code.
+
+Selecting `authorizePayment()` emphasizes Commerce API → Payment Provider by directed component IDs in each available diagram. Missing connections are identified explicitly, with links to relevant views when available. Entering exploration fits once; subsequent function/range navigation and resizing preserve graph zoom and center. Fit to view remains manual, and closing exploration restores the previous architecture viewport.
+
+The sample implementations cover checkout, authorization, queue publishing, and webhook reconciliation, including declined/unresolved payments, idempotency, durable authorization state, and retry behavior. Their adapter contracts are included; runtime adapters and HTTP bindings are outside this demo. Source and explanations are curated fixtures, not inferred analysis or AI-generated content. Repository source access, hierarchical component drill-down, and IDE links remain planned.
 
 ### 4. Agent-Native MCP Integration
 
@@ -68,7 +76,7 @@ Agents supply their understanding while writing code. Planned code analysis veri
 
 A developer can request a walkthrough such as “Show me how an incoming API request reaches the database.” The planned experience highlights the relevant path, explains each step, and shows corresponding source code and data movement.
 
-The current checkout diagram illustrates a request flow; it does not yet provide generated or interactive step-by-step explanations.
+The prototype includes freely selectable function and source-range explanations plus ordered, clickable checkout-flow references. These steps open the associated function or annotation; they do not enforce a sequence or provide a walkthrough player. Generated explanations and guided playback remain future work.
 
 ### 6. Feature Walkthroughs and Replay — Future
 
@@ -139,7 +147,7 @@ The canvas presents a structured model rather than owning a separate drawing. St
 
 Code remains the implementation truth. Explanations must distinguish verified references from agent-authored descriptions and proposed architecture. Diagrams should be reviewed with the code changes they describe.
 
-The repository-storage and cache/sync design above is retained from the existing architecture direction. Storage, sync, conflict handling, MCP, and code verification are planned and are not present in the current app.
+The repository-storage and cache/sync design above is retained from the existing architecture direction. Storage, sync, conflict handling, MCP, and connected-repository code verification are planned and are not present in the current app.
 
 ## Current Prototype
 
@@ -148,16 +156,18 @@ Implemented:
 - Sample project directory, project pages, and an empty-project state.
 - Three Atlas Commerce views: system overview, service dependencies, and checkout request flow.
 - Interactive React Flow canvas with pan, zoom, selection, and diagram navigation.
-- Right component inspector with overview, labeled connections, illustrative source references, and expandable technical details.
-- Keyboard activation, Escape dismissal, focus restoration, independent inspector scrolling, and a narrow-screen overlay.
+- Right component inspector with overview, labeled connections, source entry points, and expandable technical details.
+- Resizable read-only source workspace with syntax coloring, curated function/range explanations, linked navigation, and synchronized graph focus.
+- Clickable feature-flow steps and explicit unavailable-source/connection states.
+- Keyboard activation, Escape dismissal, focus restoration, independent inspector scrolling, and a separate details pane below the graph on narrow screens.
 
-All content uses local fixtures. There is no authentication, persistence, repository connection, MCP server, graph editing, source-code viewer, hierarchical drill-down, code analysis, automatic update, change highlighting, or generated walkthrough.
+All content uses local fixtures. There is no authentication, persistence, repository connection, MCP server, graph editing, connected repository source, hierarchical component drill-down, inferred code analysis, automatic update, change highlighting, or generated walkthrough.
 
 ## Delivery Outline
 
 1. **Exploration foundation:** refine the canvas and inspector so developers can understand components and follow their relationships. This is the current prototype phase.
 2. **Model and agent updates:** define the versioned repository format, connect a local MCP server, and reflect agent changes on the canvas during project development.
-3. **Implementation navigation:** attach validated files and functions, add component-level drill-down, source inspection, and IDE links.
+3. **Implementation navigation:** the curated source/function demo validates exploration; connect repository source, add component-level drill-down, and provide IDE links.
 4. **Explanations and verification:** provide visual execution walkthroughs, change highlighting, and stale-reference checks.
 5. **Later exploration:** feature walkthroughs and replay, collaboration, optional GitHub integration, and cross-project views.
 

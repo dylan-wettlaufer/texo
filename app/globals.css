@@ -286,17 +286,17 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .not-found p { color: var(--muted-foreground); }
 .diagram-nav-link:hover { background: var(--sidebar-accent); }
 .canvas-viewport { height: 100%; position: absolute; inset: 0; }
-.architecture-node { position: relative; gap: 0; overflow: visible; cursor: grab; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow-sm); text-align: left; padding: 12px 15px; color: var(--card-foreground); transition: box-shadow .15s, border-color .15s; }
-.architecture-node:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
-.architecture-node.selected { border: 2px solid var(--primary); box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 20%, transparent); padding: 11px 14px; }
-.node-top { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
-.node-symbol { width: 23px; height: 23px; display: grid; place-items: center; font-size: 15px; background: color-mix(in oklch, var(--chart-1) 12%, var(--card)); color: var(--chart-1); border-radius: var(--radius); }
-.node-kind { font-family: var(--font-mono); font-size: 8px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted-foreground); }
-.architecture-node strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 4px; }
-.node-technology { font-size: 10px; color: var(--muted-foreground); }
-.node-service .node-symbol { background: color-mix(in oklch, var(--chart-2) 12%, var(--card)); color: var(--chart-2); }
-.node-storage .node-symbol { background: color-mix(in oklch, var(--chart-5) 12%, var(--card)); color: var(--chart-5); }
-.node-external .node-symbol { background: color-mix(in oklch, var(--chart-1) 12%, var(--card)); color: var(--chart-1); }
+.architecture-node { position: relative; flex-direction: row; align-items: center; gap: 10px; overflow: visible; cursor: grab; border: 1px solid var(--border); border-radius: 14px; background: var(--card); box-shadow: 0 4px 12px rgb(0 0 0 / 8%); text-align: left; padding: 12px; color: var(--card-foreground); transition: box-shadow .15s, border-color .15s; }
+.architecture-node:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
+.architecture-node.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 25%, transparent), 0 4px 16px rgb(0 0 0 / 12%); }
+.node-symbol { width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center; background: color-mix(in oklch, var(--chart-1) 18%, var(--card)); color: var(--chart-1); border-radius: 9px; }
+.node-symbol svg { width: 18px; height: 18px; }
+.node-copy { min-width: 0; }
+.node-kind { display: block; font-family: var(--font-mono); font-size: 8px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted-foreground); margin-top: 5px; }
+.architecture-node strong { font-size: 12px; font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-service .node-symbol { background: color-mix(in oklch, var(--chart-2) 18%, var(--card)); color: var(--chart-2); }
+.node-storage .node-symbol { background: color-mix(in oklch, var(--chart-5) 18%, var(--card)); color: var(--chart-5); }
+.node-external .node-symbol { background: color-mix(in oklch, var(--chart-1) 18%, var(--card)); color: var(--chart-1); }
 .canvas-controls { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; background: var(--card); box-shadow: var(--shadow-sm); border: 1px solid var(--border); border-radius: var(--radius); padding: 3px; }
 .icon-button { border: 0; background: transparent; color: var(--muted-foreground); width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius); font-size: 19px; }
 .icon-button:hover { background: var(--card); }
@@ -352,7 +352,7 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 }
 .canvas-controls { z-index: 5; }
 .architecture-node:active { cursor: grabbing; }
-.architecture-node .react-flow__handle { background: var(--input); border: 2px solid var(--card); width: 8px; height: 8px; }
+.architecture-node .react-flow__handle { opacity: 0; width: 4px; height: 4px; }
 
 /* Readable prose uses Open Sans; interface headings use Ubuntu. */
 .page-heading p, .welcome-panel p, .project-card p, .project-summary p,
@@ -385,12 +385,12 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .diagram-switcher { left: 12px; max-width: calc(100% - 72px); }
 .diagram-name { display: block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
 .workspace-theme { right: 12px; }
-.architecture-workspace { --inspector-width: 420px; }
-.has-inspector .canvas-viewport { right: var(--inspector-width); }
-.has-inspector .workspace-theme { right: calc(var(--inspector-width) + 12px); }
+.architecture-workspace { --inspector-width: clamp(320px, 30vw, 420px); display: grid; grid-template-columns: minmax(0, 1fr); }
+.architecture-workspace.has-inspector { grid-template-columns: minmax(0, 1fr) var(--inspector-width); }
+.workspace-graph { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
 .node-inspector {
-  position: absolute; inset: 0 0 0 auto; z-index: 20;
-  width: var(--inspector-width); max-width: 100%;
+  position: relative; z-index: 20;
+  width: 100%; min-width: 0; min-height: 0;
   display: flex; flex-direction: column; overflow: hidden;
   border-left: 1px solid var(--border); background: var(--card); color: var(--foreground);
 }
@@ -420,8 +420,8 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .inspector-metadata dt { color: var(--muted-foreground); }
 @media (max-width: 700px) {
   .diagram-name { max-width: 180px; }
-  .has-inspector .canvas-viewport { right: 0; }
-  .has-inspector .workspace-theme { right: 12px; }
+  .architecture-workspace.has-inspector { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 45fr) minmax(0, 55fr); }
+  .node-inspector { border-left: 0; border-top: 1px solid var(--border); }
   .inspector-content { padding: 16px; }
 }
 
@@ -439,3 +439,78 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .inspector-additional { border-top: 1px solid var(--border); margin-top: 24px; padding-top: 20px; }
 .inspector-additional summary { cursor: pointer; color: var(--muted-foreground); font-size: 13px; }
 .inspector-additional summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+
+/* Read-only source exploration shares the workspace with the architecture map. */
+.architecture-workspace.is-exploring { grid-template-columns: minmax(0, var(--code-share)) 8px minmax(0, var(--graph-share)); }
+.code-explorer { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 55fr) minmax(0, 45fr); background: var(--card); overflow: hidden; }
+.explorer-header { padding: 12px 16px; border-bottom: 1px solid var(--border); min-width: 0; }
+.explorer-toolbar { display: flex; align-items: center; gap: 6px; }
+.explorer-toolbar > .exploration-eyebrow { flex: 1; margin: 0; }
+.explorer-header h2 { font-family: var(--font-mono); font-size: 13px; font-weight: 500; margin: 12px 0; overflow-wrap: anywhere; }
+.explorer-header h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.explorer-pickers { display: flex; gap: 12px; }
+.explorer-pickers label { flex: 1; min-width: 0; font-size: 11px; color: var(--muted-foreground); }
+.explorer-pickers select { display: block; width: 100%; margin-top: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); color: var(--foreground); font-size: 12px; }
+.exploration-eyebrow { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 8px; }
+.code-scroll { position: relative; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--background); }
+.source-lines { width: max-content; min-width: 100%; padding: 16px 0; }
+.source-line { display: flex; min-height: 23px; align-items: baseline; padding-right: 20px; line-height: 23px; }
+.source-line.is-highlighted { background: color-mix(in oklch, var(--primary) 9%, var(--background)); box-shadow: inset 3px 0 var(--primary); }
+.line-number { position: sticky; left: 0; flex: 0 0 40px; width: 40px; text-align: right; padding-right: 8px; color: var(--muted-foreground); background: var(--background); font-family: var(--font-mono); font-size: 11px; user-select: none; }
+.code-markers { flex: 0 0 22px; display: inline-flex; justify-content: center; }
+.code-markers button { color: var(--primary); cursor: pointer; font-size: 10px; padding: 0 2px; }
+.source-line code { font-family: var(--font-mono); font-size: 12px; white-space: pre; }
+.code-declaration { font: inherit; text-align: left; cursor: pointer; border-bottom: 1px dotted var(--muted-foreground); }
+.code-declaration:hover { background: var(--accent); }
+.syntax-keyword { color: #8b3eae; }
+.syntax-string { color: #216f43; }
+.syntax-number { color: #a45500; }
+.syntax-comment { color: #636d78; font-style: italic; }
+.dark .syntax-keyword { color: #c4a0ef; }
+.dark .syntax-string { color: #a4d8a0; }
+.dark .syntax-number { color: #f3bb81; }
+.dark .syntax-comment { color: #99a4b2; }
+.explorer-context { min-height: 0; overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); }
+.explorer-context .node-inspector { border-left: 0; height: 100%; }
+.exploration-explanation { padding: 20px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.exploration-explanation h2 { font-size: 20px; font-weight: 500; line-height: 1.3; margin-bottom: 16px; }
+.explanation-section { margin-top: 24px; }
+.explanation-section h3 { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+.explanation-section ul, .explanation-section ol { padding-left: 20px; }
+.explanation-section ul { list-style: disc; }
+.explanation-section ol { list-style: decimal; }
+.explanation-section li { margin-bottom: 8px; }
+.explanation-section .explanation-links, .explanation-section .architecture-interactions { list-style: none; padding: 0; }
+.explanation-links button, .feature-flow button { justify-content: flex-start; height: auto; white-space: normal; text-align: left; padding: 4px 8px; font-size: 13px; max-width: 100%; }
+.architecture-interactions li { padding: 12px; border: 1px solid var(--border); border-radius: 8px; }
+.architecture-interactions strong { font-weight: 500; }
+.architecture-interactions small { display: block; color: var(--muted-foreground); }
+.architecture-interactions a { color: var(--primary); text-decoration: underline; }
+.feature-flow p { color: var(--muted-foreground); margin-left: 8px; }
+.feature-flow [aria-current="step"] { background: var(--accent); }
+.source-file-chooser { padding: 24px; display: grid; gap: 12px; font-size: 13px; }
+.source-file-chooser button { justify-content: flex-start; height: auto; min-height: 48px; text-align: left; white-space: normal; }
+.source-file-chooser small { display: block; color: var(--muted-foreground); margin-top: 4px; }
+.source-unavailable { padding: 12px; background: var(--accent); border-radius: 6px; margin-bottom: 12px; }
+.node-inspector .source-entry { display: flex; width: 100%; justify-content: flex-start; align-items: center; gap: 12px; height: auto; padding: 8px; text-align: left; white-space: normal; }
+.source-entry > span { min-width: 0; flex: 1; }
+.exploration-divider { position: relative; display: grid; place-items: center; background: var(--background); border-inline: 1px solid var(--border); cursor: col-resize; touch-action: none; }
+.exploration-divider > span { width: 2px; height: 28px; background: var(--muted-foreground); border-radius: 2px; }
+.exploration-divider:hover, .exploration-divider:focus-visible { background: var(--accent); outline: 2px solid var(--ring); outline-offset: -2px; }
+.architecture-node.node-focused { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklch, var(--primary) 25%, transparent); }
+@media (max-width: 899px) {
+  .architecture-workspace.is-exploring { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--code-share)) 8px minmax(0, var(--graph-share)); }
+  .exploration-divider { border-inline: 0; border-block: 1px solid var(--border); cursor: row-resize; }
+  .exploration-divider > span { width: 28px; height: 2px; }
+  .explorer-header { padding: 8px 12px; }
+  .explorer-header h2 { margin: 6px 0; font-size: 11px; }
+  .exploration-explanation { padding: 12px; }
+}
+
+.component-exploration-context { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.component-exploration-context .node-inspector { flex: 1; min-height: 0; }
+.return-to-code { padding: 8px 20px; border-bottom: 1px solid var(--border); text-align: left; font-size: 12px; color: var(--primary); cursor: pointer; }
+.return-to-code:hover { background: var(--accent); }
+
+.exploration-explanation h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
+.return-to-code { justify-content: flex-start; height: auto; border-radius: 0; }

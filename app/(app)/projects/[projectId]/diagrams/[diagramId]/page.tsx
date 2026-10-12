@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getExplorationModel } from "@/lib/exploration/server";
 import { ArchitectureWorkspace } from "@/components/workspace/architecture-workspace";
 import { getDiagram, getProject, getProjectDiagrams } from "@/lib/architecture/data";
 
@@ -7,5 +8,5 @@ export default async function DiagramPage({ params }: { params: Promise<{ projec
   const project = getProject(projectId);
   const diagram = getDiagram(projectId, diagramId);
   if (!project || !diagram) notFound();
-  return <ArchitectureWorkspace key={`${projectId}/${diagramId}`} project={project} diagram={diagram} diagrams={getProjectDiagrams(projectId)} />;
+  return <ArchitectureWorkspace key={`${projectId}/${diagramId}`} project={project} diagram={diagram} diagrams={getProjectDiagrams(projectId)} exploration={getExplorationModel(projectId)} />;
 }

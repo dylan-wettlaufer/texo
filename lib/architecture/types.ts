@@ -1,3 +1,5 @@
+import type { SourceReference } from "../exploration/types";
+
 export type NodeKind = "application" | "service" | "storage" | "external";
 export interface ArchitectureNode {
   id: string;
@@ -11,7 +13,7 @@ export interface ArchitectureNode {
   technologies?: string[];
   architectureDecisions?: string[];
   codeReferences?: string[];
-  sourceFiles?: { path: string; description: string }[];
+  sourceFiles?: SourceReference[];
   notes?: string;
   metadata?: Record<string, string>;
 }

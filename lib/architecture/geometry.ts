@@ -1,7 +1,7 @@
 import type { ArchitectureNode } from "./types";
 
-export const NODE_WIDTH = 220;
-export const NODE_HEIGHT = 108;
+export const NODE_WIDTH = 180;
+export const NODE_HEIGHT = 68;
 
 export function diagramSize(nodes: ArchitectureNode[]) {
   return {

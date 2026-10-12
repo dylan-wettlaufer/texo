@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { ArrowDownRight, ArrowUpRight, Box, FileCode2, PanelRightClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { SourceReference } from "@/lib/exploration/types";
 import type { ArchitectureEdge, ArchitectureNode } from "@/lib/architecture/types";
 import { nodeConnections, nodeRelationships } from "@/lib/architecture/node-details";
 import { kindLabels } from "./architecture-node";
@@ -15,7 +16,7 @@ function DetailList({ values, empty, code = false }: { values?: string[]; empty:
   return <ul className={`inspector-list${code ? " inspector-code" : ""}`}>{values.map((value, index) => <li key={`${index}-${value}`}>{code ? <code>{value}</code> : value}</li>)}</ul>;
 }
 
-export function NodeInspector({ node, catalogue, edges, onSelect, onClear }: { node?: ArchitectureNode; catalogue: ArchitectureNode[]; edges: ArchitectureEdge[]; onSelect: (id: string) => void; onClear: () => void }) {
+export function NodeInspector({ node, catalogue, edges, onSelect, onClear, onOpenSource }: { node?: ArchitectureNode; catalogue: ArchitectureNode[]; edges: ArchitectureEdge[]; onSelect: (id: string) => void; onClear: () => void; onOpenSource: (reference: SourceReference) => void }) {
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const nodeId = node?.id;
 
@@ -46,7 +47,7 @@ export function NodeInspector({ node, catalogue, edges, onSelect, onClear }: { n
         </InspectorSection>
         <InspectorSection title="Related source files">
           <p className="inspector-example">Example references</p>
-          {sourceFiles === undefined ? <p className="inspector-empty">Not documented.</p> : sourceFiles.length === 0 ? <p className="inspector-empty">No source files.</p> : <ul className="inspector-source-files">{sourceFiles.map((file) => <li key={file.path}><FileCode2 aria-hidden="true" /><span><code>{file.path}</code>{file.description && <small>{file.description}</small>}</span></li>)}</ul>}
+          {sourceFiles === undefined ? <p className="inspector-empty">Not documented.</p> : sourceFiles.length === 0 ? <p className="inspector-empty">No source files.</p> : <ul className="inspector-source-files">{sourceFiles.map((file) => <li key={file.path}><Button variant="ghost" className="source-entry" data-source-path={file.path} onClick={() => onOpenSource(file)}><FileCode2 aria-hidden="true" /><span><code>{file.path}</code>{file.description && <small>{file.description}</small>}</span><ArrowUpRight aria-hidden="true" /></Button></li>)}</ul>}
         </InspectorSection>
         <details className="inspector-additional"><summary>More component details</summary>
         <InspectorSection title="Depends On">
