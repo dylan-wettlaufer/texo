@@ -23,7 +23,7 @@ For readable exploration from this project's root, run `npm run --silent repo:qu
 
 ## Explore local source
 
-With `npm run dev` running from this checkout, open `/projects/texo/code` or choose **Texo → Open Code Explorer** from the project directory. Browse files, switch Browse to Functions to search, select a function, and follow its callers or resolved calls. Back/Forward restores selections. **Refresh** rescans saved edits; navigation otherwise uses the same captured snapshot.
+With `npm run dev` running from this checkout, open `/projects/texo/code` or choose **Texo → Open Code Explorer** from the project directory. Browse files, switch Browse to Functions to search, select a function, and follow its callers or resolved calls. Back/Forward restores selections. **Refresh** checks saved content hashes and resolution inputs, reusing cached analysis when unchanged; navigation otherwise uses the same captured snapshot.
 
 This feature is development-only. Production hides the Texo project and returns 404 for the explorer and its data endpoints. Source is read by the local Next.js server; the browser receives selected files and paginated results. Atlas's diagrams and explanations remain authored demos. See [the local explorer guide](docs/repository-parser.md#browse-local-source-in-the-web-app) for limitations and refresh behavior.
 

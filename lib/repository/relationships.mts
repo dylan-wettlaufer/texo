@@ -1,11 +1,10 @@
-import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { isCallableNode, sourceRange } from "./declarations.mts";
 import type { DeclarationAnalysis } from "./declarations.mts";
 import type { ModuleBinding, ModuleReference, RepositoryIndex, RepositoryDeclaration } from "./types.mts";
 
-const MAX_CONFIG_BYTES = 2 * 1024 * 1024;
+import { createResolutionHost } from "./resolution-host.mts";
 export interface ParsedSource extends DeclarationAnalysis {
   tree: ts.SourceFile;
   fileId: string;
@@ -14,43 +13,7 @@ export interface ParsedSource extends DeclarationAnalysis {
 export function extractRelationships(root: string, sources: ParsedSource[], index: RepositoryIndex) {
   const sourceByPath = new Map(sources.map((source) => [source.tree.fileName, source]));
   const byNode = new Map(sources.flatMap((source) => [...source.byNode]));
-  const jsonCache = new Map<string, string | undefined>();
-  function safePath(name: string) {
-    const full = path.resolve(name);
-    if (full !== root && !full.startsWith(root + path.sep)) return undefined;
-    try {
-      // Reject symlinked paths, including ancestors, even when the target is inside root.
-      if (realpathSync(full) !== full) return undefined;
-      return full;
-    } catch { return undefined; }
-  }
-  const host: ts.ModuleResolutionHost = {
-    fileExists(name) {
-      const full = path.resolve(name);
-      if (sourceByPath.has(full)) return true;
-      const safe = safePath(full);
-      return Boolean(safe && lstatSync(safe).isFile());
-    },
-    readFile(name) {
-      const full = path.resolve(name);
-      const source = sourceByPath.get(full);
-      if (source) return source.tree.text;
-      if (jsonCache.has(full)) return jsonCache.get(full);
-      const safe = safePath(full);
-      let content: string | undefined;
-      if (safe && /\.jsonc?$/.test(full) && lstatSync(safe).size <= MAX_CONFIG_BYTES) {
-        try { content = readFileSync(safe, "utf8"); } catch { /* Reported by config parsing/resolution. */ }
-      }
-      jsonCache.set(full, content);
-      return content;
-    },
-    directoryExists(name) {
-      const safe = safePath(name);
-      return Boolean(safe && lstatSync(safe).isDirectory());
-    },
-    getCurrentDirectory: () => root,
-    realpath: (name) => safePath(name) ?? name,
-  };
+  const { host, inputs } = createResolutionHost(root, sourceByPath);
   const defaultOptions: ts.CompilerOptions = {
     allowJs: true, checkJs: false, noEmit: true, noLib: true,
     target: ts.ScriptTarget.Latest, module: ts.ModuleKind.ESNext,
@@ -226,4 +189,5 @@ export function extractRelationships(root: string, sources: ParsedSource[], inde
     }
     visit(source.tree);
   }
+  return inputs;
 }

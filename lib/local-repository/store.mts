@@ -1,5 +1,5 @@
-import { randomUUID } from "node:crypto";
-import { createRepositoryQuery, parseRepository } from "../repository/index.mts";
+import { createHash, randomUUID } from "node:crypto";
+import { createRepositoryCache, createRepositoryQuery } from "../repository/index.mts";
 import { validatePage } from "../repository/query.mts";
 import { tokenizeSource } from "../exploration/tokenize.mts";
 import type { RepositoryIndex } from "../repository/types.mts";
@@ -10,7 +10,7 @@ export class RepositoryRequestError extends Error {
   code: string;
   constructor(status: number, code: string, message: string) { super(message); this.status = status; this.code = code; }
 }
-type Snapshot = { revision: string; query: ReturnType<typeof createRepositoryQuery> };
+type Snapshot = { revision: string; indexHash: string; query: ReturnType<typeof createRepositoryQuery> };
 export function createLocalRepositoryStore(scan: () => Promise<RepositoryIndex>, enabled: () => boolean) {
   let current: Snapshot | undefined;
   let pending: Promise<Snapshot> | undefined;
@@ -18,7 +18,10 @@ export function createLocalRepositoryStore(scan: () => Promise<RepositoryIndex>,
   function load(): Promise<Snapshot> {
     if (pending) return pending;
     pending = scan().then((index) => {
-      const next = { revision: randomUUID(), query: createRepositoryQuery(index) };
+      // Source contentHash alone excludes config-dependent relationships and diagnostics.
+      const indexHash = createHash("sha256").update(JSON.stringify(index)).digest("hex");
+      if (current?.indexHash === indexHash) return current;
+      const next = { revision: randomUUID(), indexHash, query: createRepositoryQuery(index) };
       current = next;
       return next;
     }).finally(() => { pending = undefined; });
@@ -98,4 +101,5 @@ export function createLocalRepositoryStore(scan: () => Promise<RepositoryIndex>,
     },
   };
 }
-export function defaultScan() { return parseRepository({ rootPath: process.cwd() }); }
+const defaultCache = createRepositoryCache({ rootPath: process.cwd() });
+export function defaultScan() { return defaultCache.read(); }

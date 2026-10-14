@@ -125,9 +125,9 @@ Run `npm run dev` from Texo's checkout root. Open `/projects/texo/code`, or choo
 
 Selecting a file opens captured source and a function picker. Selecting a function highlights and scrolls to its implementation range, falling back to its declaration for signature-only records. The details pane shows direct callers and calls. Resolved connections are clickable; unresolved calls retain their reasons without invented targets. Top-level callers open their file and highlight the call site. Exploration Back/Forward restores selections. No generated explanations or architecture mappings are attached to real source; Atlas's demo remains separate.
 
-The local Next.js server owns the checkout root (`process.cwd()`). It lazily scans once and retains one in-memory query snapshot across navigation; it does not reread source for every click. **Refresh** reparses saved changes and publishes a new revision only after success. Existing selections are retained by ID when available. Deleted/renamed declarations or files show an unavailable state and can be replaced through browsing. Old call-site ranges are cleared on a new revision. Failed refreshes keep the previous scan and show a retry action. Working edits are not automatically watched.
+The local Next.js server owns the checkout root (`process.cwd()`). It lazily scans once and retains one in-memory query snapshot across navigation; it does not reread source for every click. **Refresh** hashes saved source and validates resolution inputs. It reuses cached analysis when unchanged, and publishes a new revision only when the resulting index changes. Existing selections are retained by ID when available. Deleted/renamed declarations or files show an unavailable state and can be replaced through browsing. Old call-site ranges are cleared on a new revision. Failed refreshes keep the previous scan and show a retry action. Working edits are not automatically watched.
 
-A second browser's Refresh may change the revision. Old-revision requests receive a distinct stale response; **Reload current scan** loads the published snapshot without another scan. Late navigation responses cannot replace newer selections. Restarting the server discards the in-memory snapshot. Captured content is not a transactional snapshot of simultaneous filesystem edits.
+A second browser's Refresh may change the revision. Old-revision requests receive a distinct stale response; **Reload current scan** loads the published snapshot without another scan. Late navigation responses cannot replace newer selections. Restarting the server discards the in-memory snapshot and analysis cache. Captured content is not a transactional snapshot of simultaneous filesystem edits.
 
 `/api/local-repository` provides GET operations (`summary`, `files`, `search`, `file`, `declaration`, `callers`, `callees`) and an empty POST for Refresh. List/detail requests require the current revision, and IDs must refer to indexed files/declarations. Responses are `no-store` and contain only requested data; file responses include server-tokenized lines rather than the full repository index. There is no browser-supplied root path. Errors distinguish invalid requests, missing selections, outdated revisions and failed scans without exposing machine paths. Production rejects the page and endpoints before scanning and omits the local project from navigation.
 
@@ -136,3 +136,25 @@ This is a local development feature with no authentication or remote repository 
 Verify the server adapter and navigation with `node --test lib/local-repository/*.test.mjs`; run existing parser, query, exploration and architecture tests as well. Browser verification covers finding `parseRepository`, navigating to `extractRelationships`, history, Refresh, mobile layout and Atlas's authored source exploration.
 
 The default Turbopack development bundler handles `.mts` modules directly. The webpack fallback (`npm run build -- --webpack`) uses a small build-only loader to strip their types with the existing TypeScript dependency before Next.js's normal transforms. This leaves native Node CLI sources unchanged. Standard Turbopack builds still require the environment to permit its local CSS worker; Next's existing Google Fonts also require network access when uncached.
+
+
+## Content-hash cache
+
+The local web backend uses a bounded in-memory cache of parsed indexes. On first access it captures source bytes and analyzes them. On Refresh it repeats safe discovery and content hashing; an unchanged checkout reuses its parsed index and query snapshot. Touching a file without changing bytes does not invalidate it. Changed results receive a new revision; unchanged results keep their revision, so other open explorer tabs are not invalidated unnecessarily. Navigation continues to use the selected snapshot until Refresh; this adds no automatic watcher.
+
+The cache key includes the canonical checkout root, sorted source paths/content hashes, repository metadata, discovery diagnostics, TypeScript version and an internal analysis version. Configuration affects relationships even when source text is unchanged, so cache validation also checks the resolution inputs observed during analysis: configuration/JSON contents, file/directory existence (including missing candidates), and safe path resolution. This detects inherited and newly created nearer tsconfig/jsconfig files, changed package metadata, and previously unresolved imports becoming resolvable. The public `repository.contentHash` remains a source-content hash, not the complete cache key.
+
+Only valid hits skip AST parsing and relationship analysis. A miss rebuilds the complete index; this is whole-index caching, not per-file incremental parsing. Completed entries are retained using LRU eviction, with two entries per cache instance by default (configurable from 1 to 10). Concurrent reads share work, returned indexes are detached from cached records, and failed reads/analysis do not overwrite successful entries. Cached data never bypasses current discovery/path/symlink checks. Different checkout roots cannot share an entry.
+
+For another server-side consumer:
+
+```ts
+import { createRepositoryCache } from './lib/repository/index.mts';
+
+const cache = createRepositoryCache({ rootPath: process.cwd() });
+const index = await cache.read();
+const unchanged = await cache.read(); // Rehashes inputs, then reuses valid analysis.
+const stats = cache.getStats(); // hits, misses, successful analyses, retained entries.
+```
+
+The parser/query CLI commands still perform fresh scans. No cache files, database, dependencies, repository registration, or additional endpoints are introduced. Cache state is process-local and discarded on restart. Run `node --test lib/repository/cache.test.mjs` for cache-specific coverage.
