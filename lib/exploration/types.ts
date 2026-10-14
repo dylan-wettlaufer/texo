@@ -13,6 +13,15 @@ export interface SourceFile {
   description: string;
   content: string;
 }
+export interface ExplanationStep {
+  id: string;
+  title: string;
+  range?: SourceRange;
+  componentIds: string[];
+  interactions: Interaction[];
+  annotationId?: string;
+  explanation?: { does: string; why: string };
+}
 export interface FunctionRecord {
   id: string;
   fileId: string;
@@ -20,6 +29,7 @@ export interface FunctionRecord {
   componentIds: string[];
   purpose: string;
   behavior: string[];
+  steps: ExplanationStep[];
   inputs: string[];
   outputs: string[];
   sideEffects: string[];
@@ -52,7 +62,8 @@ export interface SourceToken { text: string; kind: TokenKind }
 export interface PreparedFile extends SourceFile {
   lines: { number: number; tokens: SourceToken[] }[];
 }
-export interface PreparedFunction extends FunctionRecord { range?: SourceRange; unavailableReason?: string }
+export interface PreparedStep extends ExplanationStep { unavailableReason?: string }
+export interface PreparedFunction extends FunctionRecord { steps: PreparedStep[]; range?: SourceRange; unavailableReason?: string }
 export interface PreparedAnnotation extends Annotation { range?: SourceRange; unavailableReason?: string }
 export interface ExplorationModel {
   files: PreparedFile[];
@@ -66,6 +77,7 @@ export interface ExplorationSelection {
   fileId?: string;
   functionId?: string;
   annotationId?: string;
+  stepId?: string;
   directory?: boolean;
 }
 export interface ExplorationHistory {

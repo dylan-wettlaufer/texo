@@ -1,4 +1,92 @@
-import type { ExplorationData } from "./types";
+import type { ExplanationStep, ExplorationData } from "./types";
+
+// Explicitly authored against the sample source in demo.ts. Preparation validates
+// these line numbers; it never infers teaching steps from the implementation.
+const commerceSteps: Record<string, ExplanationStep[]> = {
+  "create-order": [
+    {
+      id: "checkout-key", title: "Require an idempotency key", range: { startLine: 6, endLine: 6 },
+      componentIds: ["web", "api"], interactions: [{ source: "web", target: "api", description: "Identify one checkout request" }],
+      explanation: { does: "Rejects requests without a stable checkout key.", why: "The same key identifies retries of one checkout so they can resume the original order." },
+    },
+    {
+      id: "checkout-lock", title: "Serialize requests with a checkout lock", range: { startLine: 7, endLine: 8 },
+      componentIds: ["api", "db"], interactions: [{ source: "api", target: "db", description: "Serialize work for one checkout key in the order store" }],
+      explanation: { does: "Runs checkout inside the store's lock for this key.", why: "Concurrent requests must not both create or authorize the same checkout before either saves its result." },
+    },
+    {
+      id: "checkout-retry", annotationId: "checkout-retry", title: "Reuse a checkout safely", range: { startLine: 9, endLine: 12 },
+      componentIds: ["api", "db"], interactions: [{ source: "api", target: "db", description: "Find the previously accepted checkout" }],
+    },
+    {
+      id: "create-pending-order", title: "Create a pending order from the stored cart", range: { startLine: 13, endLine: 17 },
+      componentIds: ["api", "db"], interactions: [{ source: "api", target: "db", description: "Read the payable cart and create the pending order" }],
+      explanation: { does: "Loads the cart, checks its total, and creates an order when the key has no existing order.", why: "The stored cart supplies a trusted price; empty or non-payable carts must not reach payment." },
+    },
+    {
+      id: "persist-authorization", annotationId: "persist-authorization", title: "Authorize payment and persist the result", range: { startLine: 18, endLine: 23 },
+      componentIds: ["api", "payments", "db"], interactions: [{ source: "api", target: "payments", description: "Authorize pending checkout" }, { source: "api", target: "db", description: "Persist authorization and reject declined orders" }],
+    },
+    {
+      id: "checkout-publish", title: "Publish fulfillment and return the order", range: { startLine: 24, endLine: 26 },
+      componentIds: ["api", "queue"], interactions: [{ source: "api", target: "queue", description: "Publish the authorized order for fulfillment" }],
+      explanation: { does: "Waits for queue publishing before returning the order ID and status.", why: "If publishing fails, retrying resumes the saved authorization and uses the same job ID instead of paying twice." },
+    },
+  ],
+  "coordinate-payment": [
+    {
+      id: "trusted-price", annotationId: "trusted-price", title: "Prepare payment from the stored order", range: { startLine: 5, endLine: 11 },
+      componentIds: ["api", "payments"], interactions: [{ source: "api", target: "payments", description: "Forward the trusted amount, currency, and checkout key" }],
+    },
+  ],
+  "authorize-payment": [
+    {
+      id: "positive-payment", title: "Reject a non-positive payment", range: { startLine: 4, endLine: 4 },
+      componentIds: ["api"], interactions: [],
+      explanation: { does: "Stops the request when the amount is zero or negative.", why: "Invalid amounts must be rejected before asking the provider to authorize funds." },
+    },
+    {
+      id: "provider-request", annotationId: "provider-request", title: "Authorize with an idempotency key", range: { startLine: 5, endLine: 10 },
+      componentIds: ["api", "payments"], interactions: [{ source: "api", target: "payments", description: "Request authorization with the original checkout key" }],
+    },
+    {
+      id: "provider-result", annotationId: "provider-result", title: "Distinguish decline from uncertainty", range: { startLine: 11, endLine: 17 },
+      componentIds: ["api", "payments"], interactions: [{ source: "api", target: "payments", description: "Interpret the provider's authorization response" }],
+    },
+  ],
+  "publish-order": [
+    {
+      id: "queue-payload", title: "Publish a fulfillment payload", range: { startLine: 5, endLine: 5 },
+      componentIds: ["api", "queue"], interactions: [{ source: "api", target: "queue", description: "Send the order ID to the fulfillment queue" }],
+      explanation: { does: "Adds a fulfill-order job containing the authorized order ID.", why: "The worker can perform fulfillment asynchronously without keeping checkout waiting for that work." },
+    },
+    {
+      id: "queue-retries", annotationId: "queue-retries", title: "Deduplicate and retry fulfillment jobs", range: { startLine: 6, endLine: 9 },
+      componentIds: ["api", "queue"], interactions: [{ source: "api", target: "queue", description: "Configure stable job identity and bounded retries" }],
+    },
+  ],
+  "payment-webhook-handler": [
+    {
+      id: "verify-webhook", annotationId: "verify-webhook", title: "Authenticate before trusting an event", range: { startLine: 8, endLine: 11 },
+      componentIds: ["payments", "api"], interactions: [{ source: "payments", target: "api", description: "Authenticate a provider event before trusting it" }],
+    },
+    {
+      id: "parse-webhook", title: "Parse the authenticated event", range: { startLine: 12, endLine: 12 },
+      componentIds: ["api"], interactions: [],
+      explanation: { does: "Parses the verified body through the injected provider adapter.", why: "State updates require a validated event, rather than trusting arbitrary request fields." },
+    },
+    {
+      id: "apply-webhook", title: "Apply the event once", range: { startLine: 13, endLine: 14 },
+      componentIds: ["api", "db"], interactions: [{ source: "api", target: "db", description: "Deduplicate event IDs and reject stale payment updates" }],
+      explanation: { does: "Applies the event through an atomic order-store operation.", why: "Repeated or out-of-order provider deliveries must not overwrite newer payment state." },
+    },
+    {
+      id: "acknowledge-webhook", title: "Acknowledge delivery", range: { startLine: 15, endLine: 15 },
+      componentIds: ["api", "payments"], interactions: [{ source: "payments", target: "api", description: "Acknowledge the provider delivery" }],
+      explanation: { does: "Returns received: true and whether the event changed local state.", why: "Already processed events still need acknowledgement so the provider can stop retrying delivery." },
+    },
+  ],
+};
 
 // These are readable sample implementations, never executed by Texo.
 export const commerceExploration: ExplorationData = {
@@ -153,6 +241,7 @@ export interface CommerceDependencies {
   functions: [
     {
       id: "create-order", fileId: "orders", name: "createOrder", componentIds: ["api", "web"],
+      steps: commerceSteps["create-order"],
       purpose: "Accept checkout, coordinate payment, and queue fulfillment only after the order is authorized.",
       behavior: ["Require a checkout key and serialize concurrent requests with that key.", "Load an existing order or create a pending order using the stored cart total.", "Authorize pending orders and persist the provider result before publishing a job.", "Reject declined payments. Publish accepted orders with a stable job ID and return their state."],
       inputs: ["cartId identifies the server-side cart, which supplies the payable total and currency.", "idempotencyKey identifies one checkout. Reusing it for another cart is rejected.", "deps supplies the order store, provider transport, and job queue."],
@@ -168,6 +257,7 @@ export interface CommerceDependencies {
     },
     {
       id: "coordinate-payment", fileId: "payment", name: "coordinatePayment", componentIds: ["api"],
+      steps: commerceSteps["coordinate-payment"],
       purpose: "Translate a stored order into a payment authorization request.",
       behavior: ["Read the order's amount and currency, rather than trusting browser prices.", "Pass the checkout key and order ID to the provider adapter.", "Return the authorization result unchanged to the order endpoint."],
       inputs: ["order contains the server-side price, currency, and stable checkout key.", "provider is the injected payment transport."],
@@ -178,6 +268,7 @@ export interface CommerceDependencies {
     },
     {
       id: "authorize-payment", fileId: "payment-client", name: "authorizePayment", componentIds: ["api", "payments"],
+      steps: commerceSteps["authorize-payment"],
       purpose: "Ask the external payment provider to authorize an order and normalize its response.",
       behavior: ["Reject a non-positive payment amount.", "Send the order ID, total, and currency with the same idempotency key on every retry.", "Treat pending authorization as unresolved rather than assuming approval.", "Return the payment ID and approval flag for the order store."],
       inputs: ["input carries the order ID, amount, currency, and checkout idempotency key.", "provider supplies the external authorization transport."],
@@ -188,6 +279,7 @@ export interface CommerceDependencies {
     },
     {
       id: "publish-order", fileId: "queue-source", name: "publishOrder", componentIds: ["api", "queue"],
+      steps: commerceSteps["publish-order"],
       purpose: "Publish an accepted order for asynchronous fulfillment.",
       behavior: ["Create a fulfillment payload containing the order ID.", "Use that ID as the stable job ID to deduplicate checkout retries.", "Configure five attempts with exponential backoff.", "Wait until the queue accepts the job; propagate publishing failures."],
       inputs: ["orderId identifies an already authorized order.", "queue is the injected job publisher."],
@@ -198,6 +290,7 @@ export interface CommerceDependencies {
     },
     {
       id: "payment-webhook-handler", fileId: "payment-webhook", name: "handlePaymentWebhook", componentIds: ["api", "payments"],
+      steps: commerceSteps["payment-webhook-handler"],
       purpose: "Reconcile authenticated provider events with local order/payment state.",
       behavior: ["Verify the signature against the original request body before trusting it.", "Parse and validate the event through the injected provider adapter.", "Apply it through a store operation that deduplicates event IDs and rejects stale state.", "Acknowledge both new and already processed events."],
       inputs: ["body is the original request body; signature authenticates its sender.", "deps supplies provider verification and the order store."],

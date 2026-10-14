@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, type CSSProperties } from "react";
 import type { Diagram, Project } from "@/lib/architecture/types";
 import { projectNodeCatalogue } from "@/lib/architecture/node-details";
 import type { ExplorationHistory, ExplorationModel, ExplorationSelection, SourceReference } from "@/lib/exploration/types";
-import { functionSelection, pushSelection, resolveSource, selectionContext } from "@/lib/exploration/navigation";
+import { functionSelection, moveHistory, pushSelection, resolveSource, selectionContext, stepSelection } from "@/lib/exploration/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { DiagramNavigator } from "./diagram-navigator";
@@ -25,8 +25,8 @@ export function ArchitectureWorkspace({ project, diagram, diagrams, exploration 
   const selection = history?.entries[history.index];
   const context = selection ? selectionContext(selection, exploration) : undefined;
   const focused = Boolean(history && !componentContext && context?.fn);
-  const interactions = focused ? (selection?.annotationId ? context?.annotation?.interactions ?? [] : context?.fn?.interactions ?? []) : undefined;
-  const focusedNodeIds = focused ? [...new Set([...(context?.fn?.componentIds ?? []), ...(interactions ?? []).flatMap((interaction) => [interaction.source, interaction.target])])] : undefined;
+  const interactions = focused ? context?.interactions : undefined;
+  const focusedNodeIds = focused ? context?.focusedNodeIds : undefined;
 
   function selectNode(id: string, trigger?: HTMLElement) {
     if (trigger) triggerRef.current = trigger;
@@ -39,10 +39,7 @@ export function ArchitectureWorkspace({ project, diagram, diagrams, exploration 
   }
   function openSource(reference: SourceReference) { navigate(resolveSource(reference, exploration)); }
   function selectFunction(id: string, annotationId?: string) { navigate(functionSelection(id, exploration, annotationId)); }
-  function selectAnnotation(id: string) {
-    const annotation = exploration.annotations.find((candidate) => candidate.id === id);
-    if (annotation) selectFunction(annotation.functionId, id);
-  }
+  function selectStep(functionId: string, stepId: string) { navigate(stepSelection(functionId, stepId, exploration)); }
   function returnToOverview() { if (selection?.functionId) selectFunction(selection.functionId); }
   function closeExploration() {
     const path = selection?.path;
@@ -67,8 +64,11 @@ export function ArchitectureWorkspace({ project, diagram, diagrams, exploration 
     <ExplorationContext
       model={exploration} fn={context?.fn} functionRequested={selection?.functionId}
       annotation={context?.annotation} annotationRequested={Boolean(selection?.annotationId)}
+      step={context?.step} stepRequested={selection?.stepId}
+      file={context?.file}
       catalogue={catalogue} diagram={diagram} diagrams={diagrams}
-      onFunction={selectFunction} onAnnotation={selectAnnotation} onOverview={returnToOverview}
+      onFunction={selectFunction} onStep={selectStep} onOverview={returnToOverview}
+      history={history} onHistory={(delta) => { setHistory((previous) => previous && moveHistory(previous, delta)); setComponentContext(false); }}
     />
   );
   return (
@@ -79,9 +79,9 @@ export function ArchitectureWorkspace({ project, diagram, diagrams, exploration 
     }}>
       {history && selection && <CodeExplorer
         model={exploration} selection={selection}
-        onNavigate={navigate} onFunction={selectFunction} onAnnotation={selectAnnotation}
+        onNavigate={navigate} onFunction={selectFunction} onStep={selectStep}
         onClose={closeExploration}
-        contextKey={componentContext ? `component:${selectedId}` : `code:${selection.path}:${selection.functionId}:${selection.annotationId}`}
+        contextKey={componentContext ? `component:${selectedId}` : `code:${selection.path}:${selection.functionId}`}
         context={explanation}
       />}
       {history && <ExplorationDivider value={split} onChange={setSplit} container={workspaceRef} />}

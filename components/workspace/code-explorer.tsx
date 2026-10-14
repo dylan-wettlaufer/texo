@@ -2,25 +2,25 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, FolderOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { selectionContext } from "@/lib/exploration/navigation";
+import { selectionContext, stepAtLine } from "@/lib/exploration/navigation";
 import type { ExplorationModel, ExplorationSelection } from "@/lib/exploration/types";
 
-export function CodeExplorer({ model, selection, onNavigate, onFunction, onAnnotation, onClose, context, contextKey }: {
+export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep, onClose, context, contextKey }: {
   model: ExplorationModel;
   selection: ExplorationSelection;
   onNavigate: (selection: ExplorationSelection) => void;
   onFunction: (id: string, annotationId?: string) => void;
-  onAnnotation: (id: string) => void;
+  onStep: (functionId: string, stepId: string) => void;
   onClose: () => void;
   context: ReactNode;
   contextKey: string;
 }) {
   const { file, fn, range } = selectionContext(selection, model);
   const [sourceOpen, setSourceOpen] = useState(true);
+  const [explanationOpen, setExplanationOpen] = useState(true);
   const sourceRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const functions = model.functions.filter((candidate) => candidate.fileId === file?.id);
-  const annotations = model.annotations.filter((candidate) => functions.some((record) => record.id === candidate.functionId));
   const fileId = file?.id;
   const startLine = range?.startLine;
   const endLine = range?.endLine;
@@ -32,7 +32,11 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onAnnot
       if (row && sourceRef.current) sourceRef.current.scrollTo({ top: Math.max(0, row.offsetTop - 24), behavior: "instant" });
     });
     return () => cancelAnimationFrame(frame);
-  }, [fileId, startLine, endLine, selection.annotationId, sourceOpen]);
+  }, [fileId, startLine, endLine, selection.annotationId, selection.stepId, sourceOpen]);
+  function activateCodeStep(functionId: string, stepId: string) {
+    setExplanationOpen(true);
+    onStep(functionId, stepId);
+  }
   return <section className="code-explorer" aria-label="Code exploration">
     <header className="explorer-header">
       <div className="explorer-toolbar">
@@ -47,7 +51,7 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onAnnot
         {file && <label>Function<select aria-label="Select function" value={fn?.id ?? ""} onChange={(event) => onFunction(event.target.value)}><option value="" disabled>{functions.length ? "Select a function" : "No functions in this file"}</option>{functions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}()</option>)}</select></label>}
       </div>
     </header>
-    <Collapsible defaultOpen className="explorer-section explorer-explanation-section">
+    <Collapsible open={explanationOpen} onOpenChange={setExplanationOpen} className="explorer-section explorer-explanation-section">
       <CollapsibleTrigger asChild><Button variant="ghost" className="explorer-section-trigger">Explanation<ChevronDown aria-hidden="true" /></Button></CollapsibleTrigger>
       <CollapsibleContent forceMount asChild>
         <div key={contextKey} className="explorer-context" tabIndex={0} role="region" aria-label="Interactive explanation">{context}</div>
@@ -60,13 +64,14 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onAnnot
       {selection.directory ? <div className="source-file-chooser"><FolderOpen aria-hidden="true" /><h3>Payment integration files</h3>{model.files.filter((candidate) => candidate.path.startsWith(selection.path)).map((candidate) => <Button key={candidate.id} variant="outline" onClick={() => onNavigate({ path: candidate.path, fileId: candidate.id, functionId: model.functions.find((record) => record.fileId === candidate.id)?.id })}><span>{candidate.path.split("/").pop()}<small>{candidate.description}</small></span></Button>)}{!model.files.some((candidate) => candidate.path.startsWith(selection.path)) && <p role="status">No source files available for this directory.</p>}</div>
         : file ? <div className="source-lines">{file.lines.map((line) => {
           const declaration = functions.find((candidate) => candidate.range?.startLine === line.number);
-          const markers = annotations.filter((candidate) => candidate.range?.startLine === line.number);
+          const annotated = stepAtLine(file.id, line.number, model);
+          const active = annotated?.fn.id === selection.functionId && annotated?.step.id === selection.stepId;
           const highlighted = range && line.number >= range.startLine && line.number <= range.endLine;
           const tokens = line.tokens.map((token, index) => <span key={index} className={`syntax-${token.kind}`}>{token.text}</span>);
           return <div key={line.number} data-line={line.number} className={`source-line${highlighted ? " is-highlighted" : ""}`}>
             <span className="line-number" aria-hidden="true">{line.number}</span>
-            <span className="code-markers">{markers.map((marker) => <button key={marker.id} type="button" aria-label={`Explain: ${marker.title}`} title={marker.title} aria-pressed={selection.annotationId === marker.id} onClick={() => onAnnotation(marker.id)}>●</button>)}</span>
-            <code>{declaration ? <button className="code-declaration" type="button" aria-label={`Explore ${declaration.name}`} onClick={() => onFunction(declaration.id)}>{tokens}</button> : tokens}</code>
+            <span className="code-markers" aria-hidden="true">{annotated?.step.range?.startLine === line.number && <span>●</span>}</span>
+            <code>{annotated ? <button className="code-step" type="button" aria-label={`Explain ${annotated.step.title}, line ${line.number}`} aria-pressed={active} onClick={() => activateCodeStep(annotated.fn.id, annotated.step.id)}>{tokens.length ? tokens : " "}</button> : declaration ? <button className="code-declaration" type="button" aria-label={`Explore ${declaration.name}`} onClick={() => onFunction(declaration.id)}>{tokens}</button> : tokens}</code>
           </div>;
         })}</div> : <div className="source-file-chooser"><h3>Source unavailable</h3><p role="status">This path is a documentation reference without sample source. Choose an available file to explore.</p></div>}
         </div>

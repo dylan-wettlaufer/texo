@@ -10,7 +10,21 @@ export function resolveSource(reference: SourceReference, model: ExplorationMode
 export function functionSelection(id: string, model: ExplorationModel, annotationId?: string): ExplorationSelection {
   const fn = model.functions.find((candidate) => candidate.id === id);
   const file = model.files.find((candidate) => candidate.id === fn?.fileId);
-  return { path: file?.path ?? "Source unavailable", fileId: file?.id, functionId: id, annotationId };
+  const stepId = annotationId ? fn?.steps.find((step) => step.annotationId === annotationId)?.id : undefined;
+  return { path: file?.path ?? "Source unavailable", fileId: file?.id, functionId: id, annotationId, stepId };
+}
+export function stepSelection(functionId: string, stepId: string, model: ExplorationModel): ExplorationSelection {
+  const selection = functionSelection(functionId, model);
+  const step = model.functions.find((fn) => fn.id === functionId)?.steps.find((candidate) => candidate.id === stepId);
+  return { ...selection, stepId, annotationId: step?.annotationId };
+}
+// Overlapping authored ranges choose the most specific step, with authored order
+// breaking ties. No arbitrary selection or client-side code analysis is involved.
+export function stepAtLine(fileId: string, line: number, model: ExplorationModel) {
+  return model.functions.filter((fn) => fn.fileId === fileId).flatMap((fn) => fn.steps
+    .filter((step) => step.range && line >= step.range.startLine && line <= step.range.endLine)
+    .map((step) => ({ fn, step })))
+    .sort((a, b) => (a.step.range!.endLine - a.step.range!.startLine) - (b.step.range!.endLine - b.step.range!.startLine))[0];
 }
 export function pushSelection(history: ExplorationHistory | null, selection: ExplorationSelection): ExplorationHistory {
   if (!history) return { entries: [selection], index: 0 };
@@ -26,7 +40,13 @@ export function selectionContext(selection: ExplorationSelection, model: Explora
   const file = model.files.find((candidate) => candidate.id === selection.fileId);
   const fn = model.functions.find((candidate) => candidate.id === selection.functionId && (!file || candidate.fileId === file.id));
   const annotation = model.annotations.find((candidate) => candidate.id === selection.annotationId && candidate.functionId === fn?.id);
-  return { file, fn, annotation, range: selection.annotationId ? annotation?.range : fn?.range };
+  const step = fn?.steps.find((candidate) => selection.stepId ? candidate.id === selection.stepId : selection.annotationId && candidate.annotationId === selection.annotationId);
+  const detailRequested = Boolean(selection.stepId || selection.annotationId);
+  const interactions = detailRequested ? step?.interactions ?? annotation?.interactions ?? [] : fn?.interactions ?? [];
+  const componentIds = detailRequested ? step?.componentIds ?? [] : fn?.componentIds ?? [];
+  const focusedNodeIds = [...new Set([...componentIds, ...interactions.flatMap((interaction) => [interaction.source, interaction.target])])];
+  return { file, fn, annotation, step, interactions, focusedNodeIds,
+    range: selection.stepId || step ? step?.range : selection.annotationId ? annotation?.range : fn?.range };
 }
 export function matchesInteraction(edge: Pick<ArchitectureEdge, "source" | "target">, interactions: Interaction[]) {
   return interactions.some((interaction) => interaction.source === edge.source && interaction.target === edge.target);

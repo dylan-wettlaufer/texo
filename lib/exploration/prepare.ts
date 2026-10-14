@@ -55,7 +55,25 @@ export function prepareExploration(data: ExplorationData, componentIds: string[]
     fn.componentIds.forEach((id) => { if (!componentIds.includes(id)) report(`${fn.name}: component ${id} unavailable.`); });
     fn.calleeIds.forEach((id) => { if (!functionIds.has(id)) report(`${fn.name}: callee ${id} unavailable.`); });
     checkInteractions(fn.name, fn.interactions);
-    return { ...fn, range: unavailableReason ? undefined : ranges?.[0], unavailableReason };
+    const functionRange = unavailableReason ? undefined : ranges?.[0];
+    const stepIds = new Set<string>();
+    const annotationIds = new Set<string>();
+    const steps = fn.steps.map((step) => {
+      const unique = !stepIds.has(step.id);
+      stepIds.add(step.id);
+      const linkedAnnotation = !step.annotationId || (!annotationIds.has(step.annotationId) && data.annotations.some((annotation) => annotation.id === step.annotationId && annotation.functionId === fn.id));
+      if (step.annotationId) annotationIds.add(step.annotationId);
+      const range = step.range;
+      const valid = range && functionRange && Number.isInteger(range.startLine) && Number.isInteger(range.endLine)
+        && range.startLine >= functionRange.startLine && range.endLine <= functionRange.endLine && range.startLine <= range.endLine;
+      const reason = !unique ? report(`${fn.name}: step IDs must be unique.`)
+        : !valid ? report(`${step.title}: step source range unavailable.`) : undefined;
+      if (!linkedAnnotation) report(`${step.title}: step annotation unavailable or ambiguous.`);
+      step.componentIds.forEach((id) => { if (!componentIds.includes(id)) report(`${step.title}: component ${id} unavailable.`); });
+      checkInteractions(step.title, step.interactions);
+      return { ...step, annotationId: linkedAnnotation ? step.annotationId : undefined, range: reason ? undefined : range, unavailableReason: reason };
+    });
+    return { ...fn, steps, range: functionRange, unavailableReason };
   });
   const annotations = data.annotations.map((annotation) => {
     const fn = functions.find((candidate) => candidate.id === annotation.functionId);

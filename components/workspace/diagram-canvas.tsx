@@ -20,7 +20,7 @@ export function DiagramCanvas({ diagram, selectedId, onSelect, exploring, intera
     // Only explicit activation opens the inspector; flow selection also occurs on drag.
     onNodesChange(changes.filter((change) => change.type !== "select"));
   }, [onNodesChange]);
-  const displayedNodes = useMemo(() => nodes.map((node) => ({ ...node, selected: focusedNodeIds ? false : node.id === selectedId, data: { ...node.data, focused: focusedNodeIds?.includes(node.id) } })), [nodes, selectedId, focusedNodeIds]);
+  const displayedNodes = useMemo(() => nodes.map((node) => ({ ...node, selected: focusedNodeIds ? false : node.id === selectedId, style: { opacity: focusedNodeIds && !focusedNodeIds.includes(node.id) ? 0.35 : 1 }, data: { ...node.data, focused: focusedNodeIds?.includes(node.id) } })), [nodes, selectedId, focusedNodeIds]);
   const edges = useMemo<Edge[]>(() => diagram.edges.map((edge) => {
     const source = nodes.find((node) => node.id === edge.source)!;
     const target = nodes.find((node) => node.id === edge.target)!;
