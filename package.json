@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "repo:parse": "node scripts/repo-parse.mts",
+    "test:repository": "node --test lib/repository/*.test.mjs"
   },
   "dependencies": {
     "@xyflow/react": "^12.12.0",

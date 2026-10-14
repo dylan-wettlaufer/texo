@@ -15,6 +15,10 @@ npm run dev
 
 Open http://localhost:3000. The home route redirects to `/projects`.
 
+## Parse a repository
+
+Run `npm run repo:parse -- /absolute/path/to/checkout` to produce a local JS/TS code index with declarations, source ranges, imports/exports, and limited static call relationships. The parser runs independently of the web app and reads current Git working-tree contents. See [the parser guide](docs/repository-parser.md) for the index contract, limitations, and verification commands.
+
 ## Explore
 
 - `/projects`: sample project directory.
