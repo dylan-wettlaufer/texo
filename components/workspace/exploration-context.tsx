@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { ArchitectureNode, Diagram } from "@/lib/architecture/types";
-import type { ExplorationHistory, ExplorationModel, PreparedAnnotation, PreparedFile, PreparedFunction, PreparedStep } from "@/lib/exploration/types";
+import type { ExplorationModel, PreparedAnnotation, PreparedFunction, PreparedStep } from "@/lib/exploration/types";
 import { matchesInteraction } from "@/lib/exploration/navigation";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -15,10 +14,9 @@ function List({ values }: { values: string[] }) {
   return <ul>{values.map((value) => <li key={value}>{value}</li>)}</ul>;
 }
 
-export function ExplorationContext({ model, fn, file, functionRequested, annotation, annotationRequested, step, stepRequested, catalogue, diagram, diagrams, onFunction, onStep, onOverview, history, onHistory }: {
+export function ExplorationContext({ model, fn, functionRequested, annotation, annotationRequested, step, stepRequested, catalogue, diagram, diagrams, onFunction, onStep, onOverview }: {
   model: ExplorationModel;
   fn?: PreparedFunction;
-  file?: PreparedFile;
   functionRequested?: string;
   annotation?: PreparedAnnotation;
   annotationRequested: boolean;
@@ -30,8 +28,6 @@ export function ExplorationContext({ model, fn, file, functionRequested, annotat
   onFunction: (id: string, annotationId?: string) => void;
   onStep: (functionId: string, stepId: string) => void;
   onOverview: () => void;
-  history: ExplorationHistory | null;
-  onHistory: (delta: number) => void;
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const detailRef = useRef<HTMLHeadingElement>(null);
@@ -67,23 +63,13 @@ export function ExplorationContext({ model, fn, file, functionRequested, annotat
     })}</ul> : <p className="inspector-empty">This step runs within its highlighted component; no directed architecture connection is documented.</p>}
   </Section>;
   return <div className="exploration-explanation">
-    <Breadcrumb aria-label="Exploration breadcrumbs" className="exploration-breadcrumbs"><BreadcrumbList>
-      <BreadcrumbItem>{name(fn.componentIds[0])}</BreadcrumbItem><BreadcrumbSeparator />
-      <BreadcrumbItem>{file?.path ?? "Source unavailable"}</BreadcrumbItem><BreadcrumbSeparator />
-      <BreadcrumbItem><BreadcrumbPage>{fn.name}()</BreadcrumbPage></BreadcrumbItem>
-    </BreadcrumbList></Breadcrumb>
     <h2 ref={headingRef} tabIndex={-1}>{fn.name}()</h2>
     {fn.unavailableReason && <p role="status" className="source-unavailable">{fn.unavailableReason}</p>}
     <p className="function-purpose">{fn.purpose}</p>
-    <div className="explanation-navigation">
-      {history && <div className="explanation-history">
-        <Button variant="ghost" size="icon-sm" aria-label="Exploration back" disabled={history.index === 0} onClick={() => onHistory(-1)}><ArrowLeft aria-hidden="true" /></Button>
-        <Button variant="ghost" size="icon-sm" aria-label="Exploration forward" disabled={history.index === history.entries.length - 1} onClick={() => onHistory(1)}><ArrowRight aria-hidden="true" /></Button>
-      </div>}
-    </div>
-    <Section title="Implementation steps"><ol className="implementation-steps">{fn.steps.map((candidate) => <li key={candidate.id}>
+    <Section title="Implementation steps"><ol className="implementation-steps">{fn.steps.map((candidate, index) => <li key={candidate.id}>
       <Button variant="ghost" aria-current={step?.id === candidate.id ? "step" : undefined} onClick={() => onStep(fn.id, candidate.id)}>
-        <span>{candidate.title}<small>{candidate.range ? `Lines ${candidate.range.startLine}–${candidate.range.endLine}` : "Source range unavailable"}</small></span>
+        <span className="implementation-step-number" aria-hidden="true">{index + 1}.</span>
+        <span className="implementation-step-copy"><span className="implementation-step-title">{candidate.title}</span><span className="implementation-step-meta"><small>{candidate.range ? `Lines ${candidate.range.startLine}–${candidate.range.endLine}` : "Source range unavailable"}</small>{step?.id === candidate.id && <span className="implementation-step-selected">Selected</span>}</span></span>
       </Button>
     </li>)}</ol></Section>
     {detailRequested && <section className="selected-step-explanation" aria-label="Selected implementation step" aria-live="polite">

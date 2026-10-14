@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, FolderOpen, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { selectionContext, stepAtLine } from "@/lib/exploration/navigation";
-import type { ExplorationModel, ExplorationSelection } from "@/lib/exploration/types";
+import type { ExplorationHistory, ExplorationModel, ExplorationSelection } from "@/lib/exploration/types";
 
-export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep, onClose, context, contextKey }: {
+export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep, onClose, context, contextKey, history, onHistory }: {
   model: ExplorationModel;
   selection: ExplorationSelection;
   onNavigate: (selection: ExplorationSelection) => void;
@@ -14,6 +14,8 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
   onClose: () => void;
   context: ReactNode;
   contextKey: string;
+  history: ExplorationHistory;
+  onHistory: (delta: number) => void;
 }) {
   const { file, fn, range } = selectionContext(selection, model);
   const [sourceOpen, setSourceOpen] = useState(true);
@@ -41,7 +43,7 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
     <header className="explorer-header">
       <div className="explorer-toolbar">
         <h2 ref={headingRef} tabIndex={-1} title={selection.path}>{selection.path}</h2>
-        <Button variant="ghost" size="icon-sm" aria-label="Close code exploration" onClick={onClose}><X aria-hidden="true" /></Button>
+        <Button variant="outline" size="sm" onClick={onClose}><ArrowLeft aria-hidden="true" />Back to architecture</Button>
       </div>
       <div className="explorer-pickers">
         <label>File<select aria-label="Explore source file" value={file?.id ?? ""} onChange={(event) => {
@@ -49,14 +51,13 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
           if (next) onNavigate({ path: next.path, fileId: next.id, functionId: model.functions.find((candidate) => candidate.fileId === next.id)?.id });
         }}><option value="" disabled>Select a file</option>{model.files.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.path}</option>)}</select></label>
         {file && <label>Function<select aria-label="Select function" value={fn?.id ?? ""} onChange={(event) => onFunction(event.target.value)}><option value="" disabled>{functions.length ? "Select a function" : "No functions in this file"}</option>{functions.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}()</option>)}</select></label>}
+        <div className="explorer-history">
+          <Button variant="outline" size="icon-sm" aria-label="Exploration back" disabled={history.index === 0} onClick={() => onHistory(-1)}><ArrowLeft aria-hidden="true" /></Button>
+          <Button variant="outline" size="icon-sm" aria-label="Exploration forward" disabled={history.index === history.entries.length - 1} onClick={() => onHistory(1)}><ArrowRight aria-hidden="true" /></Button>
+        </div>
       </div>
     </header>
-    <Collapsible open={explanationOpen} onOpenChange={setExplanationOpen} className="explorer-section explorer-explanation-section">
-      <CollapsibleTrigger asChild><Button variant="ghost" className="explorer-section-trigger">Explanation<ChevronDown aria-hidden="true" /></Button></CollapsibleTrigger>
-      <CollapsibleContent forceMount asChild>
-        <div key={contextKey} className="explorer-context" tabIndex={0} role="region" aria-label="Interactive explanation">{context}</div>
-      </CollapsibleContent>
-    </Collapsible>
+    <div className="explorer-panes">
     <Collapsible open={sourceOpen} onOpenChange={setSourceOpen} className="explorer-section explorer-source-section">
       <CollapsibleTrigger asChild><Button variant="ghost" className="explorer-section-trigger">Source code<ChevronDown aria-hidden="true" /></Button></CollapsibleTrigger>
       <CollapsibleContent forceMount asChild>
@@ -77,5 +78,12 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
         </div>
       </CollapsibleContent>
     </Collapsible>
+    <Collapsible open={explanationOpen} onOpenChange={setExplanationOpen} className="explorer-section explorer-explanation-section">
+      <CollapsibleTrigger asChild><Button variant="ghost" className="explorer-section-trigger">Explanation<ChevronDown aria-hidden="true" /></Button></CollapsibleTrigger>
+      <CollapsibleContent forceMount asChild>
+        <div key={contextKey} className="explorer-context" tabIndex={0} role="region" aria-label="Interactive explanation">{context}</div>
+      </CollapsibleContent>
+    </Collapsible>
+    </div>
   </section>;
 }

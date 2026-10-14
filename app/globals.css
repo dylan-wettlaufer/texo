@@ -287,6 +287,7 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .diagram-nav-link:hover { background: var(--sidebar-accent); }
 .canvas-viewport { height: 100%; position: absolute; inset: 0; }
 .architecture-node { position: relative; flex-direction: row; align-items: center; gap: 10px; overflow: visible; cursor: grab; border: 1px solid var(--border); border-radius: calc(var(--radius) + 6px); background: var(--card); box-shadow: 0 4px 12px rgb(0 0 0 / 8%); text-align: left; padding: 12px; color: var(--card-foreground); transition: box-shadow .15s, border-color .15s; }
+.dark .architecture-node { background: color-mix(in srgb, var(--card) 94%, white); }
 .architecture-node:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgb(0 0 0 / 12%); }
 .architecture-node.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent), 0 4px 16px rgb(0 0 0 / 12%); }
 .node-symbol { width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--chart-1) 18%, var(--card)); color: var(--chart-1); border-radius: calc(var(--radius) + 1px); }
@@ -369,9 +370,14 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 
 .nav-link:focus-visible { outline-color: var(--sidebar-ring); }
 
-/* Diagram view: full canvas with only the controls needed to explore it. */
+/* Dedicated architecture and code views share the project navigation. */
 .diagram-shell { height: 100dvh; min-height: 0; overflow: hidden; }
-.architecture-workspace { position: relative; width: 100%; height: 100dvh; overflow: hidden; background: var(--background); }
+.diagram-workspace-shell { display: flex; width: 100%; height: 100dvh; min-height: 0; }
+.diagram-workspace-shell .sidebar-navigation > button { width: 100%; justify-content: flex-start; }
+.diagram-workspace-shell .sidebar-navigation > button svg { width: 18px; height: 18px; flex-shrink: 0; }
+.architecture-workspace { position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; background: var(--background); }
+.workspace-header { padding: 18px 20px; border-bottom: 1px solid var(--border); min-width: 0; background: var(--card); }
+.workspace-header [data-slot="breadcrumb-list"] { font-size: 12px; }
 .diagram-switcher, .workspace-theme {
   position: absolute; top: 12px; z-index: 10; display: flex; align-items: center;
   padding: 3px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card);
@@ -379,9 +385,13 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .diagram-switcher { left: 12px; max-width: calc(100% - 72px); }
 .diagram-name { display: block; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
 .workspace-theme { right: 12px; }
-.architecture-workspace { --inspector-width: clamp(320px, 30vw, 420px); display: grid; grid-template-columns: minmax(0, 1fr); }
-.architecture-workspace.has-inspector { grid-template-columns: minmax(0, 1fr) var(--inspector-width); }
-.workspace-graph { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.architecture-workspace { --inspector-width: clamp(320px, 30vw, 420px); display: flex; flex-direction: column; }
+.workspace-architecture { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.workspace-architecture[hidden] { display: none; }
+.has-inspector .workspace-architecture { grid-template-columns: minmax(0, 1fr) var(--inspector-width); }
+.workspace-graph { position: relative; min-width: 0; min-height: 0; margin: 16px; border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); overflow: hidden; }
+.workspace-graph .react-flow { --xy-background-color: color-mix(in srgb, var(--background) 97%, black); }
+.dark .workspace-graph .react-flow { --xy-background-color: color-mix(in srgb, var(--background) 70%, black); }
 .node-inspector {
   position: relative; z-index: 20;
   width: 100%; min-width: 0; min-height: 0;
@@ -414,7 +424,12 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .inspector-metadata dt { color: var(--muted-foreground); }
 @media (max-width: 700px) {
   .diagram-name { max-width: 180px; }
-  .architecture-workspace.has-inspector { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 45fr) minmax(0, 55fr); }
+  .has-inspector .workspace-architecture { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 45fr) minmax(0, 55fr); }
+  .diagram-workspace-shell { flex-direction: column; }
+  .diagram-workspace-shell .sidebar-footer { display: none; }
+  .diagram-workspace-shell .app-sidebar { flex-shrink: 0; }
+  .diagram-workspace-shell .architecture-workspace { height: auto; min-height: 0; }
+  .workspace-header { padding: 12px 16px; }
   .node-inspector { border-left: 0; border-top: 1px solid var(--border); }
   .inspector-content { padding: 16px; }
 }
@@ -434,13 +449,14 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .inspector-additional summary { cursor: pointer; color: var(--muted-foreground); font-size: 13px; }
 .inspector-additional summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; }
 
-/* Read-only source exploration shares the workspace with the architecture map. */
-.architecture-workspace.is-exploring { grid-template-columns: minmax(0, var(--code-share)) 8px minmax(0, var(--graph-share)); }
-.code-explorer { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--card); overflow: hidden; }
+/* Source code and its explanation sit side by side in Code Explorer. */
+.code-explorer { --code-background: var(--muted); flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--card); overflow: hidden; }
+.dark .code-explorer { --code-background: color-mix(in srgb, var(--card) 85%, black); }
 .explorer-header { flex-shrink: 0; }
 .explorer-section { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.explorer-explanation-section { flex: 45 1 0; }
-.explorer-source-section { flex: 55 1 0; border-top: 1px solid var(--border); }
+.explorer-panes { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr); }
+.explorer-explanation-section { border-left: 1px solid var(--border); }
+.explorer-section > .explorer-context, .explorer-section > .code-scroll { flex: 1; }
 .explorer-section[data-state="closed"] { flex: 0 0 auto; }
 .explorer-section-trigger { flex-shrink: 0; width: 100%; justify-content: space-between; padding: 10px 16px; border-radius: 0; font-size: 12px; }
 .explorer-section-trigger svg { transition: transform .15s; }
@@ -448,7 +464,9 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .explorer-section > [data-slot="collapsible-content"] { flex: 1; }
 .explorer-section > [data-slot="collapsible-content"][data-state="closed"] { display: none; }
 .explorer-header { padding: 12px 16px; border-bottom: 1px solid var(--border); min-width: 0; }
-.explorer-toolbar { display: flex; align-items: center; gap: 6px; }
+.explorer-toolbar { display: flex; align-items: center; gap: 12px; }
+.explorer-toolbar h2 { flex: 1; }
+.explorer-history { display: flex; align-items: flex-end; gap: 6px; }
 .explorer-toolbar > .exploration-eyebrow { flex: 1; margin: 0; }
 .explorer-header h2 { font-family: var(--font-mono); font-size: 13px; font-weight: 500; margin: 12px 0; overflow-wrap: anywhere; }
 .explorer-header h2:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
@@ -456,11 +474,11 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .explorer-pickers label { flex: 1; min-width: 0; font-size: 11px; color: var(--muted-foreground); }
 .explorer-pickers select { display: block; width: 100%; margin-top: 4px; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); color: var(--foreground); font-size: 12px; }
 .exploration-eyebrow { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted-foreground); margin-bottom: 8px; }
-.code-scroll { position: relative; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--background); }
+.code-scroll { position: relative; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--code-background); }
 .source-lines { width: max-content; min-width: 100%; padding: 16px 0; }
 .source-line { display: flex; min-height: 23px; align-items: baseline; padding-right: 20px; line-height: 23px; }
-.source-line.is-highlighted { background: color-mix(in srgb, var(--primary) 9%, var(--background)); box-shadow: inset 3px 0 var(--primary); }
-.line-number { position: sticky; left: 0; flex: 0 0 40px; width: 40px; text-align: right; padding-right: 8px; color: var(--muted-foreground); background: var(--background); font-family: var(--font-mono); font-size: 11px; user-select: none; }
+.source-line.is-highlighted { background: color-mix(in srgb, var(--primary) 9%, var(--code-background)); box-shadow: inset 3px 0 var(--primary); }
+.line-number { position: sticky; left: 0; flex: 0 0 40px; width: 40px; text-align: right; padding-right: 8px; color: var(--muted-foreground); background: var(--code-background); font-family: var(--font-mono); font-size: 11px; user-select: none; }
 .code-markers { flex: 0 0 22px; display: inline-flex; justify-content: center; }
 .code-markers button { color: var(--primary); cursor: pointer; font-size: 10px; padding: 0 2px; }
 .source-line code { font-family: var(--font-mono); font-size: 12px; white-space: pre; }
@@ -485,6 +503,17 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .explanation-section ol { list-style: decimal; }
 .explanation-section li { margin-bottom: 8px; }
 .explanation-section .explanation-links, .explanation-section .architecture-interactions { list-style: none; padding: 0; }
+.explanation-section .implementation-steps { list-style: none; padding: 8px; border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); }
+.implementation-steps li { margin: 0; }
+.implementation-steps button { width: 100%; height: auto; align-items: flex-start; justify-content: flex-start; gap: 10px; padding: 12px; text-align: left; white-space: normal; }
+.implementation-steps button:hover { background: color-mix(in srgb, var(--foreground) 5%, var(--card)); }
+.implementation-step-number { flex-shrink: 0; min-width: 18px; color: var(--muted-foreground); }
+.implementation-step-copy { min-width: 0; }
+.implementation-step-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-top: 4px; }
+.implementation-step-meta small { color: var(--muted-foreground); font-size: 11px; }
+.implementation-step-selected { color: var(--primary); font-size: 11px; }
+.implementation-steps [aria-current="step"], .implementation-steps [aria-current="step"]:hover { background: color-mix(in srgb, var(--primary) 8%, var(--card)); box-shadow: inset 3px 0 var(--primary); }
+.implementation-steps [aria-current="step"] .implementation-step-title { font-weight: 650; }
 .explanation-links button, .feature-flow button { justify-content: flex-start; height: auto; white-space: normal; text-align: left; padding: 4px 8px; font-size: 13px; max-width: 100%; }
 .architecture-interactions li { padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); }
 .architecture-interactions strong { font-weight: 500; }
@@ -503,7 +532,8 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
 .exploration-divider:hover, .exploration-divider:focus-visible { background: var(--accent); outline: 2px solid var(--ring); outline-offset: -2px; }
 .architecture-node.node-focused { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent); }
 @media (max-width: 899px) {
-  .architecture-workspace.is-exploring { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, var(--code-share)) 8px minmax(0, var(--graph-share)); }
+  .explorer-panes { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+  .explorer-explanation-section { border-left: 0; border-top: 1px solid var(--border); }
   .exploration-divider { border-inline: 0; border-block: 1px solid var(--border); cursor: row-resize; }
   .exploration-divider > span { width: 28px; height: 2px; }
   .explorer-header { padding: 8px 12px; }
