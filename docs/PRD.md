@@ -154,6 +154,7 @@ The repository-storage and cache/sync design above is retained from the existing
 Implemented:
 
 - Sample project directory, project pages, and an empty-project state.
+- Development-only Texo local project with real file/function search, captured source, direct static caller/callee navigation, history, and explicit snapshot refresh.
 - Three Atlas Commerce views: system overview, service dependencies, and checkout request flow.
 - Interactive React Flow canvas with pan, zoom, selection, and diagram navigation.
 - Right component inspector with overview, labeled connections, source entry points, and expandable technical details.
@@ -161,7 +162,7 @@ Implemented:
 - Clickable feature-flow steps and explicit unavailable-source/connection states.
 - Keyboard activation, Escape dismissal, focus restoration, independent inspector scrolling, and a separate details pane below the graph on narrow screens.
 
-All content uses local fixtures. There is no authentication, persistence, repository connection, MCP server, graph editing, connected repository source, hierarchical component drill-down, inferred code analysis, automatic update, change highlighting, or generated walkthrough.
+Atlas and Beacon use local fixtures. The development-only Texo project parses the checkout running Next.js and serves targeted code queries from an in-memory snapshot. There is no authentication, persistence, remote repository connection, MCP server, graph editing, real-source architecture mapping, hierarchical component drill-down, automatic update, change highlighting, or generated walkthrough.
 
 ## Delivery Outline
 

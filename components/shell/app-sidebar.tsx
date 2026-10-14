@@ -23,13 +23,14 @@ export function AppSidebar({ projects, workspace }: { projects: Project[]; works
           <Button variant="ghost" className={`nav-link ${workspace.view === "architecture" ? "active" : ""}`} aria-current={workspace.view === "architecture" ? "page" : undefined} onClick={() => { workspace.onArchitecture(); setOpen(false); }}><Network aria-hidden="true" />Architecture</Button>
           <Button variant="ghost" className={`nav-link ${workspace.view === "code" ? "active" : ""}`} aria-current={workspace.view === "code" ? "page" : undefined} disabled={!workspace.codeAvailable} onClick={() => { workspace.onCode(); setOpen(false); }}><SquareCode aria-hidden="true" />Code Explorer</Button>
         </>}
+        {projects.some((project) => project.id === "texo") && <Link href="/projects/texo/code" className={`nav-link ${pathname === "/projects/texo/code" ? "active" : ""}`} aria-current={pathname === "/projects/texo/code" ? "page" : undefined} onClick={() => setOpen(false)}><SquareCode aria-hidden="true" />Local Code Explorer</Link>}
         <Link href="/projects" className={`nav-link ${pathname === "/projects" ? "active" : ""}`} aria-current={pathname === "/projects" ? "page" : undefined} onClick={() => setOpen(false)}><span aria-hidden="true">▦</span> All projects</Link>
         <p className="eyebrow sidebar-section-label">YOUR PROJECTS</p>
         {projects.map((project) => {
           const active = pathname.startsWith(`/projects/${project.id}`);
           return <Link key={project.id} href={`/projects/${project.id}`} className={`nav-link ${active ? "active" : ""}`} aria-current={pathname === `/projects/${project.id}` ? "page" : undefined} onClick={() => setOpen(false)}><span className="project-mini">{project.initials}</span>{project.name}</Link>;
         })}
-        <div className="sidebar-note"><span className="status-dot" /> Prototype workspace<p>Explore a sample architecture.<br />Everything here is demo data.</p></div>
+        <div className="sidebar-note"><span className="status-dot" /> Prototype workspace<p>Explore sample architecture{projects.some((project) => project.id === "texo") ? " or your local checkout." : "."}</p></div>
       </nav>
       <div className="sidebar-footer"><Avatar className="avatar"><AvatarFallback>T</AvatarFallback></Avatar><div>Texo workspace<small>Architecture, in context</small></div></div>
     </aside>

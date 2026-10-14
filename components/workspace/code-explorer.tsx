@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, ChevronDown, FolderOpen } from "lucide-react";
+import { SourceViewer } from "./source-viewer";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { selectionContext, stepAtLine } from "@/lib/exploration/navigation";
@@ -24,17 +25,7 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
   const headingRef = useRef<HTMLHeadingElement>(null);
   const functions = model.functions.filter((candidate) => candidate.fileId === file?.id);
   const fileId = file?.id;
-  const startLine = range?.startLine;
-  const endLine = range?.endLine;
   useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, [fileId, selection.directory, selection.path]);
-  useEffect(() => {
-    if (!startLine || !sourceOpen) return;
-    const frame = requestAnimationFrame(() => {
-      const row = sourceRef.current?.querySelector<HTMLElement>(`[data-line="${startLine}"]`);
-      if (row && sourceRef.current) sourceRef.current.scrollTo({ top: Math.max(0, row.offsetTop - 24), behavior: "instant" });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [fileId, startLine, endLine, selection.annotationId, selection.stepId, sourceOpen]);
   function activateCodeStep(functionId: string, stepId: string) {
     setExplanationOpen(true);
     onStep(functionId, stepId);
@@ -63,18 +54,10 @@ export function CodeExplorer({ model, selection, onNavigate, onFunction, onStep,
       <CollapsibleContent forceMount asChild>
         <div ref={sourceRef} className="code-scroll" tabIndex={0} role="region" aria-label="Source code">
       {selection.directory ? <div className="source-file-chooser"><FolderOpen aria-hidden="true" /><h3>Payment integration files</h3>{model.files.filter((candidate) => candidate.path.startsWith(selection.path)).map((candidate) => <Button key={candidate.id} variant="outline" onClick={() => onNavigate({ path: candidate.path, fileId: candidate.id, functionId: model.functions.find((record) => record.fileId === candidate.id)?.id })}><span>{candidate.path.split("/").pop()}<small>{candidate.description}</small></span></Button>)}{!model.files.some((candidate) => candidate.path.startsWith(selection.path)) && <p role="status">No source files available for this directory.</p>}</div>
-        : file ? <div className="source-lines">{file.lines.map((line) => {
-          const declaration = functions.find((candidate) => candidate.range?.startLine === line.number);
-          const annotated = stepAtLine(file.id, line.number, model);
-          const active = annotated?.fn.id === selection.functionId && annotated?.step.id === selection.stepId;
-          const highlighted = range && line.number >= range.startLine && line.number <= range.endLine;
-          const tokens = line.tokens.map((token, index) => <span key={index} className={`syntax-${token.kind}`}>{token.text}</span>);
-          return <div key={line.number} data-line={line.number} className={`source-line${highlighted ? " is-highlighted" : ""}`}>
-            <span className="line-number" aria-hidden="true">{line.number}</span>
-            <span className="code-markers" aria-hidden="true">{annotated?.step.range?.startLine === line.number && <span>●</span>}</span>
-            <code>{annotated ? <button className="code-step" type="button" aria-label={`Explain ${annotated.step.title}, line ${line.number}`} aria-pressed={active} onClick={() => activateCodeStep(annotated.fn.id, annotated.step.id)}>{tokens.length ? tokens : " "}</button> : declaration ? <button className="code-declaration" type="button" aria-label={`Explore ${declaration.name}`} onClick={() => onFunction(declaration.id)}>{tokens}</button> : tokens}</code>
-          </div>;
-        })}</div> : <div className="source-file-chooser"><h3>Source unavailable</h3><p role="status">This path is a documentation reference without sample source. Choose an available file to explore.</p></div>}
+        : file ? <SourceViewer lines={file.lines} declarations={functions} range={range} scrollKey={`${file.id}:${selection.annotationId}:${selection.stepId}`} scrollRef={sourceRef} visible={sourceOpen} onDeclaration={onFunction} annotationAtLine={(line) => {
+          const annotated = stepAtLine(file.id, line, model);
+          return annotated ? { label: `Explain ${annotated.step.title}, line ${line}`, active: annotated.fn.id === selection.functionId && annotated.step.id === selection.stepId, marker: annotated.step.range?.startLine === line, activate: () => activateCodeStep(annotated.fn.id, annotated.step.id) } : undefined;
+        }} /> : <div className="source-file-chooser"><h3>Source unavailable</h3><p role="status">This path is a documentation reference without sample source. Choose an available file to explore.</p></div>}
         </div>
       </CollapsibleContent>
     </Collapsible>

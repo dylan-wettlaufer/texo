@@ -4,7 +4,7 @@
 
 Texo is a visual understanding layer for AI-built software. Diagrams are built and maintained alongside a project so developers can understand the code their agents are creating: what each component does, how components communicate, and which source files implement them.
 
-The current app is an interactive exploration prototype built with Next.js App Router, TypeScript, and Tailwind CSS. All project and diagram content comes from hard-coded fixtures; there are no backend integrations or persisted edits. The demo includes source inspection, curated function and code-range explanations, and synchronized architecture highlights. Agent updates through MCP, repository integration, hierarchical component views, and guided walkthroughs are planned; see [the product outline](docs/PRD.md).
+The current app is an interactive exploration prototype built with Next.js App Router, TypeScript, and Tailwind CSS. Atlas and Beacon use hard-coded fixtures; a development-only Texo project explores real source from the local checkout. There are no persisted edits. The demo includes source inspection, curated function and code-range explanations, and synchronized architecture highlights. Agent updates through MCP, remote repository connections, architecture mapping for real source, and guided walkthroughs are planned; see [the product outline](docs/PRD.md).
 
 ## Run locally
 
@@ -20,6 +20,12 @@ Open http://localhost:3000. The home route redirects to `/projects`.
 Run `npm run repo:parse -- /absolute/path/to/checkout` to produce a local JS/TS code index with declarations, source ranges, imports/exports, and limited static call relationships. The parser runs independently of the web app and reads current Git working-tree contents. See [the parser guide](docs/repository-parser.md) for the index contract, limitations, and verification commands.
 
 For readable exploration from this project's root, run `npm run --silent repo:query` for a summary, `npm run --silent repo:query -- search parseRepository` to find the parser, or `npm run --silent repo:query -- declaration parseRepository` to see its implementation. Use `callers` or `callees` with the same name to inspect call sites. Add `--json` for a targeted structured result.
+
+## Explore local source
+
+With `npm run dev` running from this checkout, open `/projects/texo/code` or choose **Texo → Open Code Explorer** from the project directory. Browse files, switch Browse to Functions to search, select a function, and follow its callers or resolved calls. Back/Forward restores selections. **Refresh** rescans saved edits; navigation otherwise uses the same captured snapshot.
+
+This feature is development-only. Production hides the Texo project and returns 404 for the explorer and its data endpoints. Source is read by the local Next.js server; the browser receives selected files and paginated results. Atlas's diagrams and explanations remain authored demos. See [the local explorer guide](docs/repository-parser.md#browse-local-source-in-the-web-app) for limitations and refresh behavior.
 
 ## Explore
 

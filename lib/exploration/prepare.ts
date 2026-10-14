@@ -1,5 +1,6 @@
 import ts from "typescript";
-import type { ExplorationData, ExplorationModel, PreparedFile, SourceRange, SourceToken, TokenKind } from "./types";
+import { tokenizeSource } from "./tokenize.mts";
+import type { ExplorationData, ExplorationModel, PreparedFile, SourceRange } from "./types";
 
 // Imported only by the server entry point and Node tests, never client components.
 export function prepareExploration(data: ExplorationData, componentIds: string[]): ExplorationModel {
@@ -21,21 +22,7 @@ export function prepareExploration(data: ExplorationData, componentIds: string[]
       }
     }
     symbols.set(file.id, names);
-    const lines: PreparedFile["lines"] = [{ number: 1, tokens: [] }];
-    const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, file.content);
-    let token = scanner.scan();
-    while (token !== ts.SyntaxKind.EndOfFileToken) {
-      const kind: TokenKind = token >= ts.SyntaxKind.FirstKeyword && token <= ts.SyntaxKind.LastKeyword ? "keyword"
-        : token === ts.SyntaxKind.StringLiteral || token === ts.SyntaxKind.NoSubstitutionTemplateLiteral ? "string"
-        : token === ts.SyntaxKind.NumericLiteral ? "number"
-        : token === ts.SyntaxKind.SingleLineCommentTrivia || token === ts.SyntaxKind.MultiLineCommentTrivia ? "comment" : "plain";
-      const pieces = scanner.getTokenText().split(/(\n)/);
-      for (const text of pieces) {
-        if (text === "\n") lines.push({ number: lines.length + 1, tokens: [] });
-        else if (text) lines[lines.length - 1].tokens.push({ text, kind } satisfies SourceToken);
-      }
-      token = scanner.scan();
-    }
+    const lines = tokenizeSource(file.content, file.path);
     return { ...file, lines };
   });
   const fileById = new Map(files.map((file) => [file.id, file]));
