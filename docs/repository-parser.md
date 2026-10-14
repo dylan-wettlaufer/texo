@@ -68,3 +68,52 @@ npm run build
 ```
 
 The CLI/parser use explicit `.mts` imports and native Node TypeScript stripping; the package module type is unchanged. `allowImportingTsExtensions` works with the project's existing `noEmit` configuration. No transpiler dependency is required.
+
+## Query the checkout
+
+Queries return a small result from a fresh scan rather than printing the full index. From Texo's root:
+
+```sh
+npm run --silent repo:query
+npm run --silent repo:query -- search parseRepository
+npm run --silent repo:query -- declaration parseRepository
+npm run --silent repo:query -- callers parseRepository
+npm run --silent repo:query -- callees parseRepository --limit 10
+npm run --silent repo:query -- files lib/repository --limit 5
+npm run --silent repo:query -- file lib/repository/query.mts
+npm run --silent repo:query -- modules lib/repository/index.mts --incoming
+npm run --silent repo:query -- search parseRepository --json
+npm run --silent repo:query -- --help
+```
+
+Default output is readable text with paths, names, locations and resolution status. Source appears only for `file` and `declaration` details. Add `--json` for the targeted result alone on stdout. Diagnostics stay on stderr; use `npm run --silent` to suppress npm's own banner when piping.
+
+Every query command scans the current checkout once. `--root` selects another checkout root. `--help` does not scan. Declaration commands accept an exact ID (quote it in your shell), a unique exact name, or a unique exact qualified name. Names are case-sensitive for selection. Ambiguity prints matching IDs and locations and exits nonzero; add `--file lib/repository/index.mts` or use an exact ID to disambiguate. `--file` also filters `search`.
+
+List commands (`files`, `search`, `callers`, `callees`, `modules`) accept `--offset` and `--limit`. The defaults are 0 and 50; limits must be 1–200 and offsets nonnegative safe integers. Lists show the total match count and preserve deterministic file/source order. Empty lists succeed. Missing detail records, unknown relationship IDs, invalid arguments, ambiguous selectors and failed scans exit nonzero without result output.
+
+`modules` shows outgoing imports, exports/re-exports and literal module loads. `--incoming` shows local references targeting the selected file; it retains type-only and re-export records. `callers` includes only resolved incoming call sites, including recursion and calls outside indexed callable bodies. `callees` includes direct outgoing call sites, with unresolved reasons; calls belonging to nested functions are queried using the nested function's own ID. Repeated calls remain separate records. Static-analysis limitations still apply: no unresolved call is guessed into an incoming relationship.
+
+### Reuse an index in memory
+
+```ts
+import { createRepositoryQuery, parseRepository } from './lib/repository/index.mts';
+
+const index = await parseRepository({ rootPath: process.cwd() });
+const query = createRepositoryQuery(index);
+const matches = query.searchDeclarations({ text: 'parseRepository', kind: 'function' });
+const match = matches.items.find(item => item.name === 'parseRepository');
+if (match) {
+  const detail = query.getDeclaration(match.id);
+  const callers = query.getCallers(match.id);
+  const callees = query.getCallees(match.id);
+}
+```
+
+The query library has no framework or filesystem dependencies. It takes a private snapshot and builds lookup maps once. Queries neither reread source nor mutate the supplied index; returned objects are detached. Reuse one query instance for multiple requests. To see working-tree edits, parse again and create a new instance.
+
+Public methods are `getSummary`, `listFiles`, `searchDeclarations`, `getFile`, `getDeclaration`, `getCallers`, `getCallees`, and `getModules`, with query result types exported from the repository entry point. Lists return `{ items, total, offset, limit }`. File lists omit source; declaration lists omit source and signature detail. Relationship results attach compact caller/target metadata without full source. `getModules` defaults to `direction: 'outgoing'`, with `'incoming'` selecting references targeting the file. Searches match names/qualified names case-insensitively; file substring filtering is also case-insensitive. Library detail lookups use exact IDs and return `undefined` when missing; relationship queries reject unknown IDs.
+
+Declaration detail includes `source` and `sourceRange` for the implementation when available, otherwise the declaration, plus individual `signatures` containing ranges and captured source. File detail includes the captured file content and its declaration summaries. Summary includes repository metadata, file/declaration counts, resolved/unresolved call counts, module-resolution counts and diagnostic counts by code.
+
+The query layer leaves index schema version 1 and `repo:parse` behavior unchanged. It bounds result output, not scan time or the full index's memory footprint. Saved-index loading, persistent storage, HTTP services, UI and MCP integration are outside this milestone.

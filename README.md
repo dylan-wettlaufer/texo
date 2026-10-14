@@ -19,6 +19,8 @@ Open http://localhost:3000. The home route redirects to `/projects`.
 
 Run `npm run repo:parse -- /absolute/path/to/checkout` to produce a local JS/TS code index with declarations, source ranges, imports/exports, and limited static call relationships. The parser runs independently of the web app and reads current Git working-tree contents. See [the parser guide](docs/repository-parser.md) for the index contract, limitations, and verification commands.
 
+For readable exploration from this project's root, run `npm run --silent repo:query` for a summary, `npm run --silent repo:query -- search parseRepository` to find the parser, or `npm run --silent repo:query -- declaration parseRepository` to see its implementation. Use `callers` or `callees` with the same name to inspect call sites. Add `--json` for a targeted structured result.
+
 ## Explore
 
 - `/projects`: sample project directory.

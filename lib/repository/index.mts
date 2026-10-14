@@ -74,3 +74,5 @@ export async function parseRepository({ rootPath, discovery = gitDiscovery }: Pa
   return index;
 }
 export type { ParseRepositoryOptions, RepositoryIndex, RepositoryDiscovery, RepositoryDiagnostic } from "./types.mts";
+export { createRepositoryQuery } from "./query.mts";
+export type * from "./query-types.mts";

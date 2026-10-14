@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "repo:parse": "node scripts/repo-parse.mts",
+    "repo:query": "node scripts/repo-query.mts",
     "test:repository": "node --test lib/repository/*.test.mjs"
   },
   "dependencies": {
