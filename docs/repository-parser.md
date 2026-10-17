@@ -121,7 +121,7 @@ The query layer leaves index schema version 1 and `repo:parse` behavior unchange
 
 ## Browse local source in the web app
 
-Run `npm run dev` from Texo's checkout root. Open `/projects/texo/code`, or choose the Texo local project and **Open Code Explorer**. Files are paginated and can be filtered by path. Switch Browse to Functions, enter a name, and select Search to find callable declarations, including methods, arrows and nested functions. Results use qualified names and locations to distinguish duplicates.
+Run `npm run dev` from Texo's checkout root. Open `/projects/texo/code`, or choose the Texo local project and **Open Code Explorer**. Files appear in an expandable source tree and can be filtered by path. Folder counts include all indexed descendants; matching folders expand automatically. The tree loads file metadata through paginated requests and fetches source only when a file is selected. Switch Browse to Functions, enter a name, and select Search to find callable declarations, including methods, arrows and nested functions. Results use qualified names and locations to distinguish duplicates.
 
 Selecting a file opens captured source and a function picker. Selecting a function highlights and scrolls to its implementation range, falling back to its declaration for signature-only records. The details pane shows direct callers and calls. Resolved connections are clickable; unresolved calls retain their reasons without invented targets. Top-level callers open their file and highlight the call site. Exploration Back/Forward restores selections. No generated explanations or architecture mappings are attached to real source; Atlas's demo remains separate.
 

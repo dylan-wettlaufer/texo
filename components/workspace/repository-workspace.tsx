@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SourceViewer } from "./source-viewer";
+import { RepositoryFileTree } from "./repository-file-tree";
 import { callSelection, createRequestGate, moveRepositoryHistory, pushRepositorySelection, selectionRange } from "@/lib/local-repository/navigation.mts";
 import type { LocalFileDetail, LocalSummary, RepositoryHistory, RepositorySelection, SnapshotResult } from "@/lib/local-repository/types.mts";
 import type { CallQueryResult, DeclarationDetail, DeclarationSummary, FileSummary, QueryPage } from "@/lib/repository/query-types.mts";
@@ -26,7 +27,7 @@ function Pagination({ page, onOffset, label }: { page: QueryPage<unknown>; onOff
     <Button variant="outline" size="icon-sm" aria-label={`Next ${label}`} disabled={page.offset + page.limit >= page.total} onClick={() => onOffset(page.offset + page.limit)}><ArrowRight aria-hidden="true" /></Button>
   </div>;
 }
-function BrowserList({ revision, onSelect, onStale }: { revision: string; onSelect: (selection: RepositorySelection) => void; onStale: () => void }) {
+function BrowserList({ revision, selectedFileId, onSelect, onStale }: { revision: string; selectedFileId?: string; onSelect: (selection: RepositorySelection) => void; onStale: () => void }) {
   const [mode, setMode] = useState<"files" | "search">("files");
   const [input, setInput] = useState("");
   const [term, setTerm] = useState("");
@@ -40,8 +41,21 @@ function BrowserList({ revision, onSelect, onStale }: { revision: string; onSele
     async function load() {
       if (mode === "search" && !term) return;
       try {
-        const { data } = await request<QueryPage<FileSummary | DeclarationSummary>>({ operation: mode, revision, offset: String(offset), limit: "25", ...(mode === "files" ? { pathContains: term } : { text: term }) });
-        if (active.current(ticket)) setResult({ key, page: data });
+        if (mode === "files") {
+          const files: FileSummary[] = [];
+          // Keep folders complete across API pages; only metadata is loaded here.
+          for (let fileOffset = 0; ; ) {
+            const { data } = await request<QueryPage<FileSummary>>({ operation: "files", revision, offset: String(fileOffset), limit: "200", pathContains: term });
+            if (!active.current(ticket)) return;
+            files.push(...data.items);
+            fileOffset += data.items.length;
+            if (fileOffset >= data.total || !data.items.length) break;
+          }
+          setResult({ key, page: { items: files, total: files.length, offset: 0, limit: files.length } });
+        } else {
+          const { data } = await request<QueryPage<DeclarationSummary>>({ operation: "search", revision, offset: String(offset), limit: "25", text: term });
+          if (active.current(ticket)) setResult({ key, page: data });
+        }
       } catch (error) {
         if (!active.current(ticket)) return;
         if (error instanceof BrowserRequestError && error.code === "stale-revision") onStale();
@@ -58,11 +72,11 @@ function BrowserList({ revision, onSelect, onStale }: { revision: string; onSele
       <Button variant="outline" type="submit"><Search aria-hidden="true" />{mode === "files" ? "Filter" : "Search"}</Button>
     </form>
     {mode === "search" && !term ? <p>Enter a function name and select Search.</p> : result?.key !== key ? <p role="status">Loading {mode === "files" ? "files" : "functions"}…</p> : result.error ? <p role="alert">{result.error}</p> : result.page && <>
-      <ul className="repository-results">{result.page.items.map((item) => <li key={item.id}><Button variant="ghost" onClick={() => onSelect("fileId" in item ? { fileId: item.fileId, declarationId: item.id } : { fileId: item.id })}>
-        {"fileId" in item ? <span>{item.qualifiedName}<small>{item.fileId}:{item.range.startLine}{item.duplicate ? " · duplicate declaration" : ""}</small></span> : <span>{item.path}<small>{item.status === "partial" ? "Partial source" : item.declarationFile ? "Declaration file" : "Source file"}</small></span>}
-      </Button></li>)}</ul>
+      {mode === "files" ? <RepositoryFileTree key={`${revision}:${term}`} files={result.page.items.filter((item): item is FileSummary => !("fileId" in item))} selectedFileId={selectedFileId} filtered={Boolean(term)} onFile={(fileId) => onSelect({ fileId })} /> : <ul className="repository-results">{result.page.items.map((item) => "fileId" in item && <li key={item.id}><Button variant="ghost" onClick={() => onSelect({ fileId: item.fileId, declarationId: item.id })}>
+        <span>{item.qualifiedName}<small>{item.fileId}:{item.range.startLine}{item.duplicate ? " · duplicate declaration" : ""}</small></span>
+      </Button></li>)}</ul>}
       {!result.page.total && <p role="status">No matching {mode === "files" ? "files" : "functions"}.</p>}
-      <Pagination page={result.page} onOffset={setOffset} label={mode} />
+      {mode === "search" ? <Pagination page={result.page} onOffset={setOffset} label={mode} /> : <p className="source-tree-total">{result.page.total} {term ? "matching " : ""}{result.page.total === 1 ? "file" : "files"}</p>}
     </>}
   </aside>;
 }
@@ -154,7 +168,7 @@ export function RepositoryWorkspace() {
     {error && <p role="alert" className="source-unavailable">{error}{snapshot && " Showing the previous scan."}<Button variant="outline" size="sm" onClick={() => { setBusy(true); setError(undefined); void bootstrap(true); }}>Retry</Button></p>}
     {stale && <p role="status" className="source-unavailable">The repository scan changed. <Button variant="outline" size="sm" onClick={() => { setBusy(true); setError(undefined); void bootstrap(); }}>Reload current scan</Button></p>}
     {!snapshot ? <p className="repository-placeholder" role="status">{busy ? "Scanning the local checkout…" : "Local source is unavailable. Retry the scan."}</p> : <div className="repository-body">
-      <BrowserList revision={snapshot.revision} onSelect={navigate} onStale={onStale} />
+      <BrowserList revision={snapshot.revision} selectedFileId={selection?.fileId} onSelect={navigate} onStale={onStale} />
       <div className="repository-content">{selection ? <SelectionPane key={`${selection.fileId}:${selection.declarationId ?? ""}`} selection={selection} revision={snapshot.revision} onSelect={navigate} onStale={onStale} /> : <p className="repository-placeholder">Choose a file or search for a function to explore its source.</p>}</div>
     </div>}
   </section>;

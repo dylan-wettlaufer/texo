@@ -582,3 +582,18 @@ h1 { font-size: 26px; font-weight: 650; letter-spacing: -.8px; }
   .repository-selection .explorer-panes { min-height: 330px; }
 }
 .repository-selection .repository-calls { list-style: none; padding: 0; }
+
+.repository-source-tree ul { list-style: none; margin: 0; padding: 0; }
+.repository-source-tree li { min-width: 0; }
+.repository-source-tree [data-slot="collapsible-content"] > ul { margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--border); }
+.repository-source-tree .source-tree-row { display: flex; justify-content: flex-start; width: 100%; height: 30px; min-width: 0; padding: 4px 6px; gap: 6px; border-radius: var(--radius-md); text-align: left; font-size: 12px; font-weight: 400; }
+.source-tree-row > svg { width: 14px; height: 14px; color: var(--muted-foreground); flex-shrink: 0; }
+.source-tree-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-tree-count { margin-left: auto; padding-left: 4px; font-size: 10px; color: var(--muted-foreground); }
+.source-tree-chevron { transition: transform .15s; }
+.source-tree-directory[data-state="open"] .source-tree-chevron { transform: rotate(90deg); }
+.source-tree-directory[data-state="closed"] .source-tree-folder-open, .source-tree-directory[data-state="open"] .source-tree-folder-closed { display: none; }
+.repository-source-tree .source-tree-file { padding-left: 26px; }
+.source-tree-file[aria-current="true"] { background: var(--accent); color: var(--accent-foreground); box-shadow: inset 2px 0 var(--primary); }
+.source-tree-partial { margin-left: auto; color: var(--primary); font-weight: 600; }
+.repository-browser .source-tree-total { margin-top: 12px; font-size: 11px; }
