@@ -1,8 +1,8 @@
 import ts from "typescript";
-import type { SourceToken, TokenKind } from "./types.ts";
+import type { SourceLine, SourceToken, TokenKind } from "./types.ts";
 
 /** Display tokens only. Analysis and declaration ranges belong to the parser. */
-export function tokenizeSource(content: string, filePath: string): { number: number; tokens: SourceToken[] }[] {
+export function tokenizeSource(content: string, filePath: string): SourceLine[] {
   const lines = [{ number: 1, tokens: [] as SourceToken[] }];
   const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, /\.(?:jsx|tsx)$/.test(filePath) ? ts.LanguageVariant.JSX : ts.LanguageVariant.Standard, content);
   let token = scanner.scan();

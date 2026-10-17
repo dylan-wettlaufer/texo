@@ -8,7 +8,7 @@ export const projects: Project[] = [
 // Architectural details and code paths are illustrative fixtures, not this repository's code.
 const nodes: ArchitectureNode[] = [
   {
-    id: "web", name: "Web application", description: "The storefront where customers browse products, manage their cart, and place orders.", technology: "Next.js · React", kind: "application", position: { x: 50, y: 220 },
+    id: "web", name: "Web application", description: "The storefront where customers browse products, manage their cart, and place orders.", technology: "Next.js · React", kind: "application",
     dependencyIds: ["api"], technologies: ["Next.js", "React", "TypeScript"],
     interfaces: ["GET /catalog — Browse available products", "GET /checkout — Review the cart and submit an order"],
     architectureDecisions: ["All payment requests go through the Commerce API so provider credentials stay off the client."],
@@ -17,7 +17,7 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Storefront team", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "api", name: "Commerce API", description: "Handles incoming commerce requests, coordinates payment authorization, stores order data, and publishes jobs for asynchronous processing.", technology: "Node.js · REST", kind: "service", position: { x: 370, y: 220 },
+    id: "api", name: "Commerce API", description: "Handles incoming commerce requests, coordinates payment authorization, stores order data, and publishes jobs for asynchronous processing.", technology: "Node.js · REST", kind: "service",
     dependencyIds: ["db", "queue", "payments"], technologies: ["Node.js", "TypeScript", "REST"],
     interfaces: ["GET /products — List the product catalog", "POST /orders — Validate checkout and create an order", "GET /orders/:id — Read order and payment state"],
     architectureDecisions: ["Persist an accepted order before publishing its fulfillment job.", "Use an idempotency key for checkout retries to avoid duplicate payment authorizations."],
@@ -31,7 +31,7 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Commerce team", Protocol: "HTTPS / JSON", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "db", name: "Primary database", description: "Stores product inventory, customer records, and orders. The API and worker share this source of truth.", technology: "PostgreSQL", kind: "storage", position: { x: 690, y: 60 },
+    id: "db", name: "Primary database", description: "Stores product inventory, customer records, and orders. The API and worker share this source of truth.", technology: "PostgreSQL", kind: "storage",
     dependencyIds: [], technologies: ["PostgreSQL"],
     interfaces: ["SQL — Products, customers, orders, and fulfillment records"],
     architectureDecisions: ["Use transactions to keep order and inventory updates consistent.", "The database stores local payment references; payment state is reconciled with the provider."],
@@ -40,7 +40,7 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Platform team", "Data classification": "Customer and order records", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "queue", name: "Order queue", description: "Buffers order events so fulfillment and notifications can run independently of checkout.", technology: "Redis · BullMQ", kind: "storage", position: { x: 690, y: 390 },
+    id: "queue", name: "Order queue", description: "Buffers order events so fulfillment and notifications can run independently of checkout.", technology: "Redis · BullMQ", kind: "storage",
     dependencyIds: [], technologies: ["Redis", "BullMQ"],
     interfaces: ["orders queue — Publish and consume fulfillment jobs", "Failed jobs — Inspect jobs that exhausted their retries"],
     architectureDecisions: ["Delivery may happen more than once, so order processing must be idempotent.", "Use bounded retries with backoff before retaining a failed job for review."],
@@ -49,7 +49,7 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Platform team", Delivery: "At least once", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "worker", name: "Order worker", description: "Processes queued orders, updates fulfillment status, and sends customer notifications.", technology: "Node.js · BullMQ", kind: "service", position: { x: 1010, y: 390 },
+    id: "worker", name: "Order worker", description: "Processes queued orders, updates fulfillment status, and sends customer notifications.", technology: "Node.js · BullMQ", kind: "service",
     dependencyIds: ["queue", "db"], technologies: ["Node.js", "TypeScript", "BullMQ"],
     interfaces: ["orders queue consumer — Handle fulfillment jobs", "GET /health — Report worker readiness"],
     architectureDecisions: ["Run fulfillment outside the checkout request to keep response times predictable.", "Record fulfillment progress before acknowledging a job so retries can resume safely."],
@@ -58,7 +58,7 @@ const nodes: ArchitectureNode[] = [
     metadata: { Owner: "Fulfillment team", Execution: "Background worker", Status: "Demo", "Code references": "Illustrative" },
   },
   {
-    id: "payments", name: "Payment provider", description: "An external payment service that authorizes and captures checkout payments.", technology: "External payment API", kind: "external", position: { x: 1010, y: 60 },
+    id: "payments", name: "Payment provider", description: "An external payment service that authorizes and captures checkout payments.", technology: "External payment API", kind: "external",
     dependencyIds: [], technologies: ["External payment API", "HTTPS", "Webhooks"],
     interfaces: ["POST /payments — Authorize a customer payment", "GET /payments/:id — Retrieve payment state", "Payment webhooks — Notify the Commerce API of state changes"],
     architectureDecisions: ["The payment provider is the source of truth for payment state.", "Verify webhook signatures before accepting payment updates."],

@@ -1,9 +1,9 @@
-import type { ArchitectureNode } from "./types";
+import type { DiagramNode } from "./types";
 
 export const NODE_WIDTH = 180;
 export const NODE_HEIGHT = 68;
 
-export function diagramSize(nodes: ArchitectureNode[]) {
+export function diagramSize(nodes: DiagramNode[]) {
   return {
     width: Math.max(640, ...nodes.map((node) => node.position.x + NODE_WIDTH + 50)),
     height: Math.max(480, ...nodes.map((node) => node.position.y + NODE_HEIGHT + 70)),
@@ -14,7 +14,7 @@ export function fitScale(viewport: { width: number; height: number }, diagram: {
   return Math.min(1, Math.max(0.1, Math.min((viewport.width - 48) / diagram.width, (viewport.height - 100) / diagram.height)));
 }
 
-export function edgeGeometry(source: ArchitectureNode, target: ArchitectureNode) {
+export function edgeGeometry(source: DiagramNode, target: DiagramNode) {
   const a = { x: source.position.x + NODE_WIDTH / 2, y: source.position.y + NODE_HEIGHT / 2 };
   const b = { x: target.position.x + NODE_WIDTH / 2, y: target.position.y + NODE_HEIGHT / 2 };
   const dx = b.x - a.x;

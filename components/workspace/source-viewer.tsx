@@ -1,10 +1,10 @@
 import { useEffect, type RefObject } from "react";
-import type { SourceRange, SourceToken } from "@/lib/exploration/types";
+import type { LineRange, SourceLine } from "@/lib/source/types";
 
 export function SourceViewer({ lines, declarations, range, scrollKey, scrollRef, visible = true, onDeclaration, annotationAtLine }: {
-  lines: { number: number; tokens: SourceToken[] }[];
-  declarations: { id: string; name: string; range?: SourceRange }[];
-  range?: SourceRange;
+  lines: SourceLine[];
+  declarations: { id: string; name: string; range?: LineRange }[];
+  range?: LineRange;
   scrollKey: string;
   scrollRef: RefObject<HTMLDivElement | null>;
   visible?: boolean;

@@ -1,3 +1,5 @@
+import type { LineRange, SourceLine } from "../source/types";
+
 export interface SourceReference {
   path: string;
   description: string;
@@ -5,7 +7,7 @@ export interface SourceReference {
   defaultFunctionId?: string;
   directory?: boolean;
 }
-export interface SourceRange { startLine: number; endLine: number }
+export type SourceRange = LineRange;
 export interface Interaction { source: string; target: string; description: string }
 export interface SourceFile {
   id: string;
@@ -57,10 +59,8 @@ export interface ExplorationData {
   annotations: Annotation[];
   flows: FeatureFlow[];
 }
-export type TokenKind = "plain" | "keyword" | "string" | "number" | "comment";
-export interface SourceToken { text: string; kind: TokenKind }
 export interface PreparedFile extends SourceFile {
-  lines: { number: number; tokens: SourceToken[] }[];
+  lines: SourceLine[];
 }
 export interface PreparedStep extends ExplanationStep { unavailableReason?: string }
 export interface PreparedFunction extends FunctionRecord { steps: PreparedStep[]; range?: SourceRange; unavailableReason?: string }

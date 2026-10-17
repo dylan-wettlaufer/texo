@@ -7,7 +7,6 @@ export interface ArchitectureNode {
   description: string;
   technology: string;
   kind: NodeKind;
-  position: { x: number; y: number };
   dependencyIds?: string[];
   interfaces?: string[];
   technologies?: string[];
@@ -23,13 +22,17 @@ export interface ArchitectureEdge {
   target: string;
   label: string;
 }
+/** Coordinates belong to a diagram view, not the component's identity or details. */
+export interface DiagramNode extends ArchitectureNode {
+  position: { x: number; y: number };
+}
 export interface Diagram {
   id: string;
   projectId: string;
   name: string;
   description: string;
   type: "System architecture" | "Service dependencies" | "Request flow";
-  nodes: ArchitectureNode[];
+  nodes: DiagramNode[];
   edges: ArchitectureEdge[];
 }
 export interface Project {

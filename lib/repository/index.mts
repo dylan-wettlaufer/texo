@@ -8,6 +8,8 @@ export async function parseRepository(options: ParseRepositoryOptions): Promise<
 export { MAX_SOURCE_BYTES, compareText } from "./capture.mts";
 export { scriptKind } from "./analyze.mts";
 export { createRepositoryCache } from "./cache.mts";
+export { createRepositorySnapshots } from "./snapshots.mts";
+export type { RepositorySnapshot } from "./snapshots.mts";
 export type { ParseRepositoryOptions, RepositoryIndex, RepositoryDiscovery, RepositoryDiagnostic } from "./types.mts";
 export { createRepositoryQuery } from "./query.mts";
 export type * from "./query-types.mts";

@@ -1,184 +1,95 @@
-# Texo — A Visual Understanding Layer for AI-Built Software
+# Texo — Living Codebase Map
 
-**Tagline:** Build with AI. Understand what it builds.
+**Build with AI. Understand what it builds.**
 
-## Overview
+## Vision
 
-Texo is an agent-native visual code exploration platform that helps developers understand how their applications work as they build with AI coding agents. The diagrams are built and maintained alongside the project: each feature adds both implementation and an explanation of how it fits into the system.
+Texo is a local knowledge graph of a project that builds and updates itself as code changes. It helps developers working with heavy AI assistance or fast-moving codebases understand what exists, how it connects, and what just changed.
 
-Developers explore a living map of services, modules, components, and functions, with plain-English explanations and references to the code behind them. Agents contribute this understanding through MCP while they implement changes.
+The primary workflow is scoped exploration: find a file or function, inspect its neighborhood, follow source evidence, and see recent changes. A whole-repository graph is not the default view.
 
-The goal is that developers remain connected to the software their agents are creating.
+## Source of truth
 
-## The Problem
+Source code is the truth for structural facts. The index derives files, declarations, imports, and statically identifiable calls from saved source. Unresolved references remain explicitly unresolved; static calls are not proof of runtime execution.
 
-AI tools can produce features faster than developers can understand their implementation. File trees reveal where code lives but make relationships and execution paths difficult to follow. Separate diagrams and Markdown explanations become outdated, and developers repeatedly ask agents to explain the same code.
+The intended local SQLite database stores the derived graph, content versions, and observed change history. Current structure can be rebuilt from source; past uncommitted edits and session events cannot be recovered from the current checkout alone. Git supplies commit baselines, not a complete history of saved edits.
 
-Texo should help developers understand responsibilities, dependencies, data flow, and design decisions at the level of detail they need, without requiring them to read every file.
+Explanations, architectural interpretations, and intent notes are a separate layer linked to indexed identities and source evidence. They must not overwrite extracted facts. A generated explanation records the content version and relevant context it describes so freshness can be checked. Authored services and request flows are not interchangeable with a static function-call graph.
 
-## Development Workflow
+Agents can later query the graph and attach attributed context. Keeping structural facts current must not depend on agents remembering to maintain architecture files. The previous proposed bidirectional sync of an agent-maintained `.texo/architecture.json` is no longer the foundation.
 
-1. Create a Texo project and connect an MCP-compatible coding agent to the repository.
-2. Describe a feature to the agent.
-3. As the agent implements the feature, it creates or updates components, connections, source references, and explanations in the project model.
-4. Texo reflects those changes on the architecture canvas.
-5. The developer clicks a component, reads its explanation, follows its connections, and explores the related implementation.
-6. Later changes update the model alongside the code so the diagrams continue to describe the project as it evolves.
+## Current implementation
 
-Existing projects can start with an agent inspecting the repository and creating an initial map. Ongoing development should maintain that map as part of feature work.
+There are two independent experiences:
 
-## Core Features
+- **Real repository exploration:** a framework-independent JS/TS analyzer and query library, CLI tools, and a development-only local source browser. They support declaration search, source ranges, imports/exports, limited static caller/callee navigation, selection history, and manual refresh.
+- **Authored architecture demo:** Atlas's three React Flow diagrams, component inspector, curated source/function explanations, and graph-focus presentation. Beacon demonstrates an empty project. These are fixtures, not generated maps of the indexed repository.
 
-### 1. Living Architecture Canvas
+The analyzer uses the existing TypeScript compiler. File hashes and resolution-input checks support a bounded whole-index cache. A cache miss rebuilds the entire index. One in-memory snapshot is published at a time; navigation uses that captured snapshot until Refresh. State is discarded on server restart.
 
-An interactive map of services, databases, APIs, modules, and components. Labeled connections explain dependencies and communication paths. Developers can pan, zoom, and navigate views. Planned agent integration updates the map as code is built and highlights components affected by recent changes.
+There is no persistent database, watcher, per-file incremental analysis, historical change overlay, real-source graph view, generated explanation, ask box, MCP server, agent attribution, or intent-note system. The local browser scans the checkout running Next.js and is disabled in production. No subsecond save-to-graph latency has been verified.
 
-### 2. Hierarchical Code Exploration
+## Existing code boundaries
 
-- **System architecture:** major services, databases, external integrations, and their communication.
-- **Component architecture:** internal modules, classes, and responsibilities within a service.
-- **Functions and source code:** individual functions, callers, dependencies, and implementation.
+- `lib/repository`: discovery, safe capture, analysis, content-hash caching, targeted queries, and snapshot publication. This core has no React, Next.js, HTTP, or authored-demo dependencies.
+- `lib/local-repository`: local web adapter, request validation, source-display preparation, and browser selection/history. Its server entry point owns checkout-root selection and development-only policy.
+- `lib/source`: shared source-display types and server-side tokenization used by real source and authored examples. Inclusive display line ranges are distinct from the parser's end-exclusive UTF-16 ranges.
+- `lib/architecture`: authored architectural details, relationships, and diagram views. Component details do not require positions; each diagram supplies its own coordinates. These types do not define the extracted code index.
+- `lib/exploration`: authored explanations, steps, annotations, and navigation for the demo. Real source browsing does not require an authored explanation record.
+- `components/workspace`: the existing React Flow canvas, inspectors, source viewer, and exploration interfaces.
 
-Progressive exploration should reveal detail on demand instead of showing the entire codebase as hundreds of nodes at once.
+These boundaries preserve the working prototype without adding unimplemented database, watcher, or agent abstractions.
 
-### 3. Interactive Component Inspector
+## Delivery phases
 
-Clicking a component opens a right sidebar that resizes the graph pane while preserving its center and zoom. Compact rounded cards and curved arrows keep the graph readable. On narrow screens, details occupy a separate pane below the graph. The primary layout is:
+### 1. Live structural graph
 
-- Component name, type, and technology.
-- **Overview:** a plain-English explanation of purpose and responsibilities.
-- **Connections:** incoming and outgoing communication with names and explanatory labels. Selecting a connected component updates the inspector.
-- **Related source files:** paths and short descriptions of the implementation they contain.
+Start with TypeScript, retaining the existing compiler-based analyzer and its resolution behavior. A Tree-sitter migration is not required for v1; additional languages can revisit the parser boundary later.
 
-Additional context includes interfaces, dependencies, consumers, design decisions, notes, and metadata. Dependency ownership is separate from communication direction; a worker depends on a queue even when jobs flow from the queue to the worker.
+Persist files, declarations, imports, calls, and content versions in SQLite. Keep node identity separate from content hashes. Existing declaration IDs survive unrelated line shifts but do not promise continuity across renames, moves, or anonymous-scope reordering. Relationship IDs also need review before they can identify changes across scans.
 
-For **Commerce API**, the overview explains request handling, payment authorization, order storage, and publishing background jobs. Connections include the Web application, Primary database, Payment provider, and Order queue. Example files are `src/api/orders.ts` (order endpoints), `src/services/payment.ts` (payment coordination), and `src/queues/orders.ts` (queue publishing).
+Add a watcher, incremental invalidation of affected analysis, and Git reconciliation for commits and branch changes. A callee, import, or configuration change may affect relationships beyond the edited file. Publish a consistent revision for consumers and retain the previous usable snapshot when analysis fails.
 
-The prototype now includes a read-only source-exploration demo. Commerce API and Payment Provider source entries open authored TypeScript examples. A directory opens a file chooser, and missing sample source remains visibly unavailable.
+**Done when:** saving a file updates the graph in under a second on a documented benchmark repository, measured through visible publication rather than parsing alone.
 
-Code and explanations occupy the left pane, and the synchronized graph occupies the right. A pointer- and keyboard-accessible divider resizes them; narrow screens stack the panes. Opening a file selects its component-associated function. Function overviews expose purpose, step-by-step behavior, inputs, outputs, side effects, linked callers/callees, and related architecture connections.
+### 2. Browsable UI with change highlighting
 
-Pre-annotated ranges can be selected through code markers or an annotation list. Selection highlights their lines and explains what the code does and why; Return to function overview clears the range. Exploration Back/Forward restores file, function, and annotation selection. Clicking a graph node shows its details without closing the code.
+Use the existing React and React Flow interface. Connect real indexed relationships to scoped views: search a node and inspect a bounded neighborhood, with source and relationship evidence available on selection.
 
-Selecting `authorizePayment()` emphasizes Commerce API → Payment Provider by directed component IDs in each available diagram. Missing connections are identified explicitly, with links to relevant views when available. Entering exploration fits once; subsequent function/range navigation and resizing preserve graph zoom and center. Fit to view remains manual, and closing exploration restores the previous architecture viewport.
+Record and display additions, edits, deletions, and relationship changes. Support recent-hour, session, and commit scopes with explicit baselines. Preserve selection and viewport as the graph changes. Link through to source and diffs.
 
-The sample implementations cover checkout, authorization, queue publishing, and webhook reconciliation, including declined/unresolved payments, idempotency, durable authorization state, and retry behavior. Their adapter contracts are included; runtime adapters and HTTP bindings are outside this demo. Source and explanations are curated fixtures, not inferred analysis or AI-generated content. Repository source access, hierarchical component drill-down, and IDE links remain planned.
+**Done when:** after an hour of coding, a glance shows what moved.
 
-### 4. Agent-Native MCP Integration
+### 3. Explanations and ask box
 
-MCP is the planned interface for Codex, Claude Code, Cursor, and other compatible agents to read and maintain the project model. During implementation, agents create components, update descriptions, modify relationships, attach source references, and record architectural decisions and feature explanations.
+Generate module/function summaries lazily for viewed or changed nodes. Record source hashes and relevant dependency/context versions; expose stale or unavailable evidence rather than presenting old explanations as current.
 
-Conceptual tools include `get_architecture`, `get_component`, `search_architecture`, component and relationship creation/update/deletion, `attach_code_reference`, `add_decision`, and `get_pending_changes`. These are proposed capabilities, not implemented tools in this prototype.
+Add plain-language session summaries and questions such as “how does auth work?” Answers cite real indexed nodes and source locations, with those nodes highlighted on the graph. Distinguish extracted facts from generated interpretation.
 
-Agents supply their understanding while writing code. Planned code analysis verifies references and flags outdated information; it complements agent explanations. Texo works with the developer's existing coding agent.
+**Done when:** answers point to verifiable nodes and lines and remain trustworthy as code changes.
 
-### 5. Visual Code Explanations
+### 4. Agent integration
 
-A developer can request a walkthrough such as “Show me how an incoming API request reaches the database.” The planned experience highlights the relevant path, explains each step, and shows corresponding source code and data movement.
+The watcher captures saved changes regardless of the editor or agent. Claude Code hooks can add attribution and session context; attribution must come from recorded evidence rather than being guessed from filesystem events.
 
-The prototype includes freely selectable function and source-range explanations plus ordered, clickable checkout-flow references. These steps open the associated function or annotation; they do not enforce a sequence or provide a walkthrough player. Generated explanations and guided playback remain future work.
+An optional MCP server exposes bounded graph queries and allows agents to leave contextual notes. It does not become responsible for maintaining extracted structural facts.
 
-### 6. Feature Walkthroughs and Replay — Future
+**Done when:** agent edits appear in the map with supported attribution.
 
-After a feature is implemented, developers could review the components added or modified and how the feature integrates into the application. Walkthrough generation, change history, and replay remain future work. The supplied outline ends during this section; detailed replay behavior still needs definition.
+### 5. Optional intent notes
 
-## Storage and Source of Truth
+Only after dogfooding demonstrates demand, record goals linked to nodes and flag potentially unrelated changes for review. Treat drift as an interpretation that requires context.
 
-**The repository is the source of truth. The Texo database is a cache and index.**
+## Scope and stack
 
-The architecture graph is stored as a structured file (for example `.texo/architecture.json`, or a `.texo/` directory of files for larger systems) committed to the project's repository. The Texo web app is a viewer and editor over that file, not the owner of the data.
+TypeScript throughout, Next.js/React for the local web UI, React Flow for graph presentation, and the existing TypeScript compiler for JS/TS analysis. SQLite, a file watcher, an LLM API for summaries, and the MCP TypeScript SDK are future additions; packages require approval before installation.
 
-### Why the repository
+Multi-repository views, additional languages, team sharing, hosted deployment, and bidirectional diagram editing are outside v1.
 
-- **Agents already have the repo.** Coding agents work inside the checkout. If the architecture is a file there, they can read it with no network call, no API key, and no dependency on Texo's servers being up.
+## Risks and validation
 
-- **It stays in sync by construction.** A code change and its architecture update can land in the same commit or PR. Each branch carries its own architecture state, so there is no separate mapping between "which diagram matches which commit."
-
-- **History and review come for free.** Diffs, blame, rollback, and PR review work on the architecture file the same way they work on code.
-
-- **Trust.** Teams that are wary of sending architecture details to a third-party service can still adopt the format without handing over their data.
-
-- **It reinforces the product philosophy.** The architecture model lives next to the code it describes, so it is part of the development workflow rather than documentation maintained separately.
-
-### What the database is for
-
-The database holds anything that is not tied to a specific commit, and a fast copy of what is:
-
-- Users, teams, permissions, and billing
-
-- Cached, parsed copies of the architecture for fast canvas rendering and search
-
-- Comments and discussion on components
-
-- Cross-project views, such as all services across an organization
-
-- Pending canvas edits that have not yet been written back to the repo
-
-### File format principles
-
-- **Stable IDs.** Every component and relationship has a stable ID so edits can be diffed and matched across versions, and so renames don't break relationships.
-
-- **Deterministic serialization.** Keys and arrays are written in a consistent order so diffs are minimal and merge conflicts are rare.
-
-- **Schema versioning.** The file declares a schema version so older files can be migrated.
-
-- **Human-readable.** The file should be reviewable in a PR without Texo.
-
-- **Splittable.** Large systems can be divided into multiple files (for example per service) to reduce merge conflicts.
-
-### Sync model
-
-```
-Agent edits  → MCP server → .texo/ file in repo → synced to Texo cache → Canvas updates
-Canvas edits → Texo cache → pending changes → written to .texo/ file in repo (via MCP server or CLI)
-```
-
-- The MCP server runs where the agent runs, reads and writes the repo file directly, and syncs changes to Texo so the canvas stays current.
-
-- Edits made on the canvas are stored as pending changes. They are written into the repo file the next time the local MCP server or CLI syncs, and the agent can ask what has changed since it last looked.
-
-- Later, an optional GitHub integration can write canvas edits back as commits or pull requests without needing a local agent session.
-
-- When the repo file and the canvas disagree, the repo file wins, and the user is shown the conflict to resolve rather than being silently overwritten.
-
-## Model and Implementation Principles
-
-The canvas presents a structured model rather than owning a separate drawing. Stable component IDs link views, explanations, relationships, and source references. Future hierarchical views should share identities and attach file/function locations without duplicating component context.
-
-Code remains the implementation truth. Explanations must distinguish verified references from agent-authored descriptions and proposed architecture. Diagrams should be reviewed with the code changes they describe.
-
-The repository-storage and cache/sync design above is retained from the existing architecture direction. Storage, sync, conflict handling, MCP, and connected-repository code verification are planned and are not present in the current app.
-
-## Current Prototype
-
-Implemented:
-
-- Sample project directory, project pages, and an empty-project state.
-- Development-only Texo local project with real file/function search, captured source, direct static caller/callee navigation, history, and explicit snapshot refresh.
-- Three Atlas Commerce views: system overview, service dependencies, and checkout request flow.
-- Interactive React Flow canvas with pan, zoom, selection, and diagram navigation.
-- Right component inspector with overview, labeled connections, source entry points, and expandable technical details.
-- Resizable read-only source workspace with syntax coloring, curated function/range explanations, linked navigation, and synchronized graph focus.
-- Clickable feature-flow steps and explicit unavailable-source/connection states.
-- Keyboard activation, Escape dismissal, focus restoration, independent inspector scrolling, and a separate details pane below the graph on narrow screens.
-
-Atlas and Beacon use local fixtures. The development-only Texo project parses the checkout running Next.js and serves targeted code queries from an in-memory snapshot. There is no authentication, persistence, remote repository connection, MCP server, graph editing, real-source architecture mapping, hierarchical component drill-down, automatic update, change highlighting, or generated walkthrough.
-
-## Delivery Outline
-
-1. **Exploration foundation:** refine the canvas and inspector so developers can understand components and follow their relationships. This is the current prototype phase.
-2. **Model and agent updates:** define the versioned repository format, connect a local MCP server, and reflect agent changes on the canvas during project development.
-3. **Implementation navigation:** the curated source/function demo validates exploration; connect repository source, add component-level drill-down, and provide IDE links.
-4. **Explanations and verification:** provide visual execution walkthroughs, change highlighting, and stale-reference checks.
-5. **Later exploration:** feature walkthroughs and replay, collaboration, optional GitHub integration, and cross-project views.
-
-## Open Questions
-
-- What is the first repository language supported for validating files and function references?
-- How are source code and IDE locations accessed safely from the viewer?
-- How quickly should agent changes appear while implementation is in progress?
-- What distinguishes implemented architecture from a proposed change?
-- Should larger models use one file or files split by service?
-- How should the canvas expose branch conflicts and pending edits?
-- Which fields can teams exclude from a cloud cache?
-- What is the first useful scope for feature walkthroughs and replay?
+- **Noise:** bound neighborhoods and emphasize relevant recent changes.
+- **Incorrect or stale explanations:** preserve source evidence, explicit resolution limits, and versioned freshness.
+- **Cost:** generate summaries lazily and invalidate only when their inputs change.
+- **Incremental correctness:** account for configuration, dependencies, deletion, and branch changes; measure latency on stated repository sizes.
+- **Product overlap:** compare arch-viewer, ContextHub, and Understand Anything before making differentiation claims in the README. The intended focus is live, session-aware understanding; that distinction is not yet validated.

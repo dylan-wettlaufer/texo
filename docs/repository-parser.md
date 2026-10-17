@@ -1,6 +1,6 @@
 # Local repository parser
 
-The repository parser is a framework-independent TypeScript library with a one-shot CLI. It indexes a local JS/TS checkout without running its code. It does not update the architecture fixtures, connect MCP, or write an index/cache into the checkout.
+The repository parser is a framework-independent TypeScript library with a one-shot CLI. It indexes a local JS/TS checkout without running its code. It does not update the architecture fixtures, connect MCP, or write an index/cache into the checkout. It is the structural foundation for the [Living Codebase Map direction](PRD.md), separate from authored explanations and diagram layout.
 
 ## Run
 
@@ -125,7 +125,9 @@ Run `npm run dev` from Texo's checkout root. Open `/projects/texo/code`, or choo
 
 Selecting a file opens captured source and a function picker. Selecting a function highlights and scrolls to its implementation range, falling back to its declaration for signature-only records. The details pane shows direct callers and calls. Resolved connections are clickable; unresolved calls retain their reasons without invented targets. Top-level callers open their file and highlight the call site. Exploration Back/Forward restores selections. No generated explanations or architecture mappings are attached to real source; Atlas's demo remains separate.
 
-The local Next.js server owns the checkout root (`process.cwd()`). It lazily scans once and retains one in-memory query snapshot across navigation; it does not reread source for every click. **Refresh** hashes saved source and validates resolution inputs. It reuses cached analysis when unchanged, and publishes a new revision only when the resulting index changes. Existing selections are retained by ID when available. Deleted/renamed declarations or files show an unavailable state and can be replaced through browsing. Old call-site ranges are cleared on a new revision. Failed refreshes keep the previous scan and show a retry action. Working edits are not automatically watched.
+The local Next.js server entry point owns the checkout root (`process.cwd()`), analysis-cache construction, and development-only policy. The framework-independent `createRepositorySnapshots(scan)` service owns lazy initialization, shared in-flight scans, and publication of one in-memory query snapshot. The web adapter validates requests and prepares source display using `lib/source`; the repository core does not depend on HTTP or authored demo types.
+
+Navigation does not reread source for every click. **Refresh** hashes saved source and validates resolution inputs. It reuses cached analysis when unchanged, and publishes a new revision only when the resulting index changes. Existing selections are retained by ID when available. Deleted/renamed declarations or files show an unavailable state and can be replaced through browsing. Old call-site ranges are cleared on a new revision. Failed refreshes keep the previous scan and show a retry action. Working edits are not automatically watched. Snapshot publication adds no persistent storage or change history.
 
 A second browser's Refresh may change the revision. Old-revision requests receive a distinct stale response; **Reload current scan** loads the published snapshot without another scan. Late navigation responses cannot replace newer selections. Restarting the server discards the in-memory snapshot and analysis cache. Captured content is not a transactional snapshot of simultaneous filesystem edits.
 

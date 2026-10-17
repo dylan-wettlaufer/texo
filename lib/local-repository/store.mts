@@ -1,7 +1,6 @@
-import { createHash, randomUUID } from "node:crypto";
-import { createRepositoryCache, createRepositoryQuery } from "../repository/index.mts";
+import { createRepositorySnapshots } from "../repository/snapshots.mts";
 import { validatePage } from "../repository/query.mts";
-import { tokenizeSource } from "../exploration/tokenize.mts";
+import { tokenizeSource } from "../source/tokenize.mts";
 import type { RepositoryIndex } from "../repository/types.mts";
 import type { LocalFileDetail, SnapshotResult } from "./types.mts";
 
@@ -10,31 +9,17 @@ export class RepositoryRequestError extends Error {
   code: string;
   constructor(status: number, code: string, message: string) { super(message); this.status = status; this.code = code; }
 }
-type Snapshot = { revision: string; indexHash: string; query: ReturnType<typeof createRepositoryQuery> };
 export function createLocalRepositoryStore(scan: () => Promise<RepositoryIndex>, enabled: () => boolean) {
-  let current: Snapshot | undefined;
-  let pending: Promise<Snapshot> | undefined;
+  const snapshots = createRepositorySnapshots(scan);
   function guard() { if (!enabled()) throw new RepositoryRequestError(404, "disabled", "Local repository browsing is unavailable"); }
-  function load(): Promise<Snapshot> {
-    if (pending) return pending;
-    pending = scan().then((index) => {
-      // Source contentHash alone excludes config-dependent relationships and diagnostics.
-      const indexHash = createHash("sha256").update(JSON.stringify(index)).digest("hex");
-      if (current?.indexHash === indexHash) return current;
-      const next = { revision: randomUUID(), indexHash, query: createRepositoryQuery(index) };
-      current = next;
-      return next;
-    }).finally(() => { pending = undefined; });
-    return pending;
-  }
   async function snapshot(revision?: string) {
     guard();
-    const value = current ?? await load();
+    const value = await snapshots.read();
     if (revision !== undefined && revision !== value.revision) throw new RepositoryRequestError(409, "stale-revision", "The repository scan changed. Reload the current scan.");
     return value;
   }
   return {
-    async refresh() { guard(); const value = await load(); return { revision: value.revision, data: value.query.getSummary() }; },
+    async refresh() { guard(); const value = await snapshots.refresh(); return { revision: value.revision, data: value.query.getSummary() }; },
     async read(params: URLSearchParams): Promise<SnapshotResult<unknown>> {
       guard();
       const operation = params.get("operation") ?? "summary";
@@ -101,5 +86,3 @@ export function createLocalRepositoryStore(scan: () => Promise<RepositoryIndex>,
     },
   };
 }
-const defaultCache = createRepositoryCache({ rootPath: process.cwd() });
-export function defaultScan() { return defaultCache.read(); }

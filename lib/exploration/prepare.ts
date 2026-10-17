@@ -1,5 +1,5 @@
 import ts from "typescript";
-import { tokenizeSource } from "./tokenize.mts";
+import { tokenizeSource } from "../source/tokenize.mts";
 import type { ExplorationData, ExplorationModel, PreparedFile, SourceRange } from "./types";
 
 // Imported only by the server entry point and Node tests, never client components.
